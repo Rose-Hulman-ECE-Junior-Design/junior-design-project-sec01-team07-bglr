@@ -21,27 +21,29 @@ Adafruit_INA219 ina219;
 #define SPEED_SERVO 33
 
 #define SERVO_FREQ 50                             // 50 Hz, 
-#define SERVO_PERIOD (1/SERVO_FREQ)*1000          // Period = 20ms
+#define SERVO_PERIOD 20                           // Period = 20ms
 #define PWM_RESOLUTION 12                         //12-bit resolution
 #define MAX_COUNT 4095                            //2^PWM_RESOLUTION - 1
 
 #define STEERING_MIN_PW  1               //minimum pulse width, ms
 #define STEERING_MAX_PW  2               //max pulse width, ms
-#define STEERING_RANGE  (STEERING_MAX_PW - STEERING_MIN_PW)
+#define STEERING_RANGE   1
 
 #define SPEED_MIN_PW  1                 //minimum pulse width, ms
 #define SPEED_MAX_PW  2                 //max pulse width, ms
-#define SPEED_RANGE  (SPEED_MAX_PW - SPEED_MIN_PW)
+#define SPEED_RANGE   1
 
 
 
 // ========================================================================================
 void setup(void) 
 {
+  Serial.println("==== STARTING INITIALIZATION. =====");
   initSerialMonitor();
   initINA219();
   initSteeringServo();
   initSpeedServo();
+  Serial.println("==== INITIALIZATION FINISHED. =====");
 }
 
 
@@ -54,7 +56,7 @@ void loop(void)
   float loadvoltage = 0;
   float power_mW = 0;
 
-  for (int i=2; i < 16; i++){
+  for (float i=60; i < 120; i = i + 20){
     shuntvoltage = ina219.getShuntVoltage_mV();
     busvoltage = ina219.getBusVoltage_V();
     current_mA = ina219.getCurrent_mA();
@@ -68,10 +70,10 @@ void loop(void)
     Serial.print("Power:         "); Serial.print(power_mW); Serial.println(" mW");
     Serial.println("");
 
-    setSteeringAngle(i*10); //will set the steering angle to 20 deg, 30 deg, 40 deg, ..., 150 deg, 160 deg
-    setServoSpeed(90);      //will set the speed to 50% approx
+    setSteeringAngle(i); //will set the steering angle to 60 deg, 80 deg, 100 deg, 120 deg
+    setServoSpeed(90.0);   //will set the speed to 50% approx
 
-    delay(2000);
+    delay(3000);
   }
 
 }
@@ -86,6 +88,7 @@ void initSerialMonitor(void){
       delay(1);
   }
   Serial.println("Hello!");
+  delay(1000);
 }
 
 /* =========================================================================================
@@ -136,11 +139,11 @@ void initSpeedServo(){
 /*
  * Set the angle of the steering servo, in degrees.
  */
-void setSteeringAngle(uint32_t angle){
+void setSteeringAngle(float angle){
 
-  uint32_t pw = STEERING_MIN_PW + [(angle/180) * STEERING_RANGE];
-  uint32_t duty = MAX_COUNT * (pw / SERVO_PERIOD);
-  Serial.println("Steering servo set to %d degrees, duty %d. " angle, duty);
+  float pw = STEERING_MIN_PW + ( (angle/180.0) * STEERING_RANGE);
+  uint32_t duty = (uint32_t) (MAX_COUNT * (pw / SERVO_PERIOD));
+  Serial.print("Steering servo set to "); Serial.print(angle); Serial.print(", duty "); Serial.println(duty); 
   
   ledcWrite(STEERING_SERVO, duty);
 }
@@ -149,11 +152,11 @@ void setSteeringAngle(uint32_t angle){
 /*
  * Set the speed of the speed servo, as a percentage of total speed.
  */
-void setServoSpeed(uint32_t angle){
+void setServoSpeed(float angle){
 
-  uint32_t pw = SPEED_MIN_PW + [(angle/180) * SPEED_RANGE];
-  uint32_t duty = MAX_COUNT * (pw / SERVO_PERIOD);
-  Serial.println("Steering servo set to %d degrees, duty %d. " angle, duty);
+  float pw = SPEED_MIN_PW + ( (angle/180.0) * SPEED_RANGE);   //pulse width, in ms
+  uint32_t duty = (uint32_t) (MAX_COUNT * (pw / SERVO_PERIOD));
+  Serial.print("Speed servo set to "); Serial.print(angle); Serial.print(", duty "); Serial.println(duty); 
 
   ledcWrite(SPEED_SERVO, duty);
 }
