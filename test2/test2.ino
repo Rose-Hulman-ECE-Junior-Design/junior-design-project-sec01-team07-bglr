@@ -15,7 +15,7 @@ BluetoothSerial SerialBT;
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(SERIAL_BAUD);
-  SerialBT.begin("ESP32_SPP_Device");       // This is the Bluetooth device name
+  SerialBT.begin("CurrentHogs_ESP32_SPP_Device");       // This is the Bluetooth device name
   Serial.println("Bluetooth SPP Started. Pair your device.");
 
 }

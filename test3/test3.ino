@@ -10,6 +10,7 @@
 #include "SoftwareSerial.h"
 
 HUSKYLENS huskylens;
+int ID1 = 1;
 
 void setup() {
   
