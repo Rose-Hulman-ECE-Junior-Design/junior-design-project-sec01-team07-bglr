@@ -2,7 +2,7 @@
  * The purpose of this program is to demonstrate use of the steering servo, 
  * wheels, and INA219 device for completion of Milestone 1.
  * 
- * Author: CK Gallegos Rodriguez
+ * Author: CKG
  */
 
 #include <Wire.h>
