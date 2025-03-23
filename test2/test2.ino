@@ -26,7 +26,7 @@ void loop() {
     String incoming = SerialBT.readStringUntil('\n');
     Serial.println("Received via BT: " + incoming);
     // Optional: Echo back to laptop
-    SerialBT.println("Echo: AHHHHH " + incoming);
+    SerialBT.println("Echo: " + incoming);
   }
 
   // Send data from Serial Monitor to Bluetooth

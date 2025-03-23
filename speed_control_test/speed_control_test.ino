@@ -1,6 +1,6 @@
 /*
- * The purpose of this program is to demonstrate use of the steering servo, 
- * wheels, and INA219 device for completion of Milestone 1.
+ * The purpose of this program is to get a feel for the range of
+ * duty cycles that our motors like.
  * 
  * Author: CKG
  */
@@ -47,40 +47,26 @@ void setup(void)
 }
 
 
+uint32_t incoming = 307; // for incoming serial data
+
 // ========================================================================================
 void loop(void) 
 {
-  float shuntvoltage = 0;
-  float busvoltage = 0;
-  float current_mA = 0;
-  float loadvoltage = 0;
-  float power_mW = 0;
 
-  
-  //setServoSpeed((float)90.0);   //will set the speed to 50% approx
-  uint32_t halfSpeedPWMCount = 307;
-  ledcWrite(SPEED_SERVO, halfSpeedPWMCount);
-  
-  for (float i=30; i < 130; i = i + 10){
-    shuntvoltage = ina219.getShuntVoltage_mV();
-    busvoltage = ina219.getBusVoltage_V();
-    current_mA = ina219.getCurrent_mA();
-    power_mW = ina219.getPower_mW();
-    loadvoltage = busvoltage + (shuntvoltage / 1000);
+
+ if (Serial.available() > 0) {
+     // read the incoming byte:
+     incoming = Serial.parseInt();
+
+     Serial.println("Received "); Serial.println(incoming);
+     setServoSpeed((uint32_t)incoming);
+
+ }else{
+    setServoSpeed((uint32_t)incoming);
+ }
+
+ delay(500);
     
-
-    Serial.print("Load Voltage:  "); Serial.print(loadvoltage); Serial.println(" V");
-    Serial.print("Current:       "); Serial.print(current_mA); Serial.println(" mA");
-    Serial.print("Power:         "); Serial.print(power_mW); Serial.println(" mW");
-    Serial.println("");
-
-    setSteeringAngle(i); //will set the steering angle to 60 deg, 80 deg, 100 deg, 120 deg
-
-
-    delay(1000);
-
-  }
-
 }
 
 
@@ -157,11 +143,11 @@ void setSteeringAngle(float angle){
 /*
  * Set the speed of the speed servo, as a percentage of total speed.
  */
-void setServoSpeed(float angle){
+void setServoSpeed(uint32_t duty){
 
-  float pw = SPEED_MIN_PW + ( (angle/180.0) * SPEED_RANGE);   //pulse width, in ms
-  uint32_t duty = (uint32_t) (MAX_COUNT * (pw / SERVO_PERIOD));
-  Serial.print("Speed servo set to "); Serial.print(angle); Serial.print(", duty "); Serial.println(duty); 
+  //float pw = SPEED_MIN_PW + ( (angle/180.0) * SPEED_RANGE);   //pulse width, in ms
+  //uint32_t duty = (uint32_t) (MAX_COUNT * (pw / SERVO_PERIOD));
+  Serial.print("Speed servo set to duty "); Serial.println(duty); 
 
   ledcWrite(SPEED_SERVO, duty);
 }
