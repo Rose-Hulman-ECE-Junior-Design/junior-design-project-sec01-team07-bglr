@@ -1,11 +1,12 @@
 /*
- * SKeleton Code for ESP32 Firmware
+ * Skeleton Code for ESP32 Firmware.
+ * Implements state machine for vehicle.
  * 
  * Author: CKG
  * 
  */
 
-
+#pragma once
 #include <SoftwareSerial.h>   //include the espsoftwareserial library
 #include <Wire.h>
 #include <Adafruit_INA219.h>
@@ -16,32 +17,6 @@
 
 #include "ESP32_Vehicle.h"      //custom library
 
-//BluetoothSerial SerialBT;
-//HUSKYLENS huskylens;
-//Adafruit_INA219 ina219;
-
-
-// GLOBAL VARIABLES =====================================================
-
-//float steeringAngle = 90.0; 
-//float  motorSpeed = 50; 
-//float shuntvoltage = 0; 
-//float busvoltage = 0; 
-//float current_mA = 0; 
-//float loadvoltage = 0; 
-//float power_mW = 0; 
-
-//enum VehicleState{ 
-//  IDLE, 
-//  DRIVING, 
-//  RECHARGING 
-//} 
-
-//VehicleState currentState; 
- 
-
-
-
 // VOID SETUP ===========================================================================
 void setup() {
   initSerialMonitor();
@@ -51,6 +26,8 @@ void setup() {
   initHUSKYLENS();
   initSteeringServo();
   initSpeedServo();
+
+  currentState = IDLE;
 
 }
 
@@ -66,11 +43,13 @@ void loop() {
   switch (currentState){
     case IDLE:
       Serial.println("Vehicle is now in IDLE state.");
-      //stuff
+      //turn off the 
       break;
       
     case DRIVING:
       Serial.println("Vehicle is now in DRIVING state.");
+      setSteeringAngle(calculateSteeringAngle());
+      setServoSpeed(calculateServoSpeed());
       //stuff
       break;
       
@@ -84,7 +63,6 @@ void loop() {
       //more stuff
       break;
     }
-
-    
+ 
 
 }

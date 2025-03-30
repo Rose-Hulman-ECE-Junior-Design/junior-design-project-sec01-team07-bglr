@@ -1,4 +1,6 @@
 /*
+ * ESP32_Vehicle.h
+ * 
  * Header file for ESP32 Vehicle.
  * 
  * Author: CKG
@@ -7,7 +9,8 @@
 #ifndef ESP32_VEHICLE_H
 #define ESP32_VEHICLE_H
 
-//#include any things I need
+//include any things we need
+#pragma once
 #include <SoftwareSerial.h>   //include the espsoftwareserial library
 #include <Wire.h>
 #include <Adafruit_INA219.h>
@@ -44,26 +47,27 @@
 
 //============================================================================
 
-// GLOBAL VARIABLES ==========================================================
+// GLOBAL VARIABLES (Declarations Only) ======================================
 
-extern float steeringAngle = 90.0; 
-extern float motorSpeed = 50; 
-extern float shuntvoltage = 0; 
-extern float busvoltage = 0; 
-extern float current_mA = 0; 
-extern float loadvoltage = 0; 
-extern float power_mW = 0; 
+extern float steeringAngle; 
+extern float motorSpeed; 
+extern float shuntvoltage; 
+extern float busvoltage; 
+extern float current_mA; 
+extern float loadvoltage; 
+extern float power_mW; 
 
 extern HUSKYLENSResult*  huskylens_arrow;  //pointer to a HUSKYLENS result type
 
-extern enum VehicleState{ 
+enum VehicleState{ 
   IDLE, 
   DRIVING, 
   RECHARGING 
-} 
+};
 
-extern VehicleState currentState = IDLE; 
+extern VehicleState currentState;
 
+//extern Serial;
 extern BluetoothSerial SerialBT;
 extern HUSKYLENS huskylens;
 extern Adafruit_INA219 ina219;

@@ -4,17 +4,41 @@
  * Contains several important functions:
  * 
  *  - init functions
- *  - simple calculation functions
- *  - other stuff
+ *  - PID controller calculation functions
+ *  - GUI communication functions
  * 
+ * Author: CKG, LL
  */
-
+#include <SoftwareSerial.h>   //include the espsoftwareserial library
+#include <Wire.h>
+#include <Adafruit_INA219.h>
+#include "HUSKYLENS.h"
+#include "SoftwareSerial.h"
+#include "BluetoothSerial.h"
 #include "ESP32_Vehicle.h"
 
 
-float Kp, Kd, Ki;
-float dt, integral, derivative;
-float prev_error;
+float Kp, Kd, Ki = 1;
+float dt, integral, derivative = 2;
+float prev_error = 0;
+
+// Global Variables (Initalizations) =========================
+float steeringAngle = 90.0;
+float motorSpeed = 50;
+float shuntvoltage = 0;
+float busvoltage = 0;
+float current_mA = 0;
+float loadvoltage = 0;
+float power_mW = 0;
+
+HUSKYLENSResult* huskylens_arrow = 0; // Initialize pointer
+
+VehicleState currentState = IDLE;
+
+BluetoothSerial SerialBT;
+HUSKYLENS huskylens;
+Adafruit_INA219 ina219;
+//Serial;
 
 
 /* 
@@ -111,26 +135,13 @@ void setServoSpeed(float angle){
   ledcWrite(SPEED_SERVO, duty);
 }
 
-
-/*
- * Reads values from INA219 to the global variables. 
- */
-void readINA219(){
-    shuntvoltage = ina219.getShuntVoltage_mV();
-    busvoltage = ina219.getBusVoltage_V();
-    current_mA = ina219.getCurrent_mA();
-    power_mW = ina219.getPower_mW();
-    loadvoltage = busvoltage + (shuntvoltage / 1000);
-}
-
-
 /*
  * Uses the PID control algorithm to calculate the correct steering angle
  */
 float calculateSteeringAngle(){
-   HUSKYLENSResult result = huskylens.read()
+   HUSKYLENSResult result = huskylens.read();
    //check if this returned an arrow
-   float error = THETA_TARGET - tan((result.xTarget - result.xOrigin) / (result.yTarget - yOrigin));
+   float error = THETA_TARGET - tan((result.xTarget - result.xOrigin) / (result.yTarget - result.yOrigin));
 
    float P = Kp * error;
    integral += error * dt;
