@@ -10,7 +10,7 @@
 #include "SoftwareSerial.h"
 
 HUSKYLENS huskylens;
-int ID1 = 1;
+
 
 void setup() {
   
@@ -23,7 +23,7 @@ void setup() {
 void loop() {
   // put your main code here, to run repeatedly:
     int32_t error; 
-    if (!huskylens.request(ID1)) {Serial.println(F("Fail to request data from HUSKYLENS, recheck the connection!"));}
+    if (!huskylens.request(1)) {Serial.println(F("Fail to request data from HUSKYLENS, recheck the connection!"));}
     else if(!huskylens.isLearned()) {Serial.println(F("Nothing learned, press learn button on HUSKYLENS to learn one!"));}
     else if(!huskylens.available()) Serial.println(F("No block or arrow appears on the screen!"));
     else

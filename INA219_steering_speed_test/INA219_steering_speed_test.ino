@@ -17,7 +17,7 @@ Adafruit_INA219 ina219;
 #define SERIAL_MONITOR_BAUD 115200
 
 
-#define STEERING_SERVO 32
+#define STEERING_SERVO 32           // steering servo pin number
 #define SPEED_SERVO 33
 
 #define SERVO_FREQ 50                             // 50 Hz, 
