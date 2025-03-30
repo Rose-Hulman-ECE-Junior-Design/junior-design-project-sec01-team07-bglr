@@ -60,23 +60,31 @@ void setup() {
 void loop() {
 
   //check for Bluetooth Input
-
-  switch (var){
+  readGUICommand();
+  sendDataLog();
+  
+  switch (currentState){
     case IDLE:
+      Serial.println("Vehicle is now in IDLE state.");
       //stuff
       break;
       
     case DRIVING:
+      Serial.println("Vehicle is now in DRIVING state.");
       //stuff
       break;
       
     case RECHARGING:
+      Serial.println("Vehicle is now in RECHARGING state.");
       //stuff
       break;
       
     default:
+      Serial.println("Vehicle is now in DEFAULT state.");
       //more stuff
       break;
     }
+
+    
 
 }

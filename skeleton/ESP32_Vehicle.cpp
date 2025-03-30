@@ -129,7 +129,8 @@ void readINA219(){
  */
 float calculateSteeringAngle(){
    HUSKYLENSResult result = huskylens.read()
-   float error = tan((result.xTarget - result.xOrigin) / (result.yTarget - yOrigin));
+   //check if this returned an arrow
+   float error = THETA_TARGET - tan((result.xTarget - result.xOrigin) / (result.yTarget - yOrigin));
 
    float P = Kp * error;
    integral += error * dt;
@@ -141,6 +142,9 @@ float calculateSteeringAngle(){
    prev_error = error;
    
    return P + I + D;
+
+   //TODO:
+   //make sure the returned steering angle does not exceed servo range
   
 }
 
@@ -190,7 +194,8 @@ void parseGUICommand(){
 void sendDataLog(){
 
   readINA219();
+  //use values in global variables (current, voltage, power)
   //package up the data
-  //send it out
+  //send it out through BT link
   
 }      

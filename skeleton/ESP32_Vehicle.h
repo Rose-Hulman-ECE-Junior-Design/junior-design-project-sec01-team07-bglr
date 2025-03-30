@@ -40,6 +40,8 @@
 #define SPEED_MIN_DUTY            350 
 #define SPEED_MAX_INC             65
 
+#define THETA_TARGET              0.0
+
 //============================================================================
 
 // GLOBAL VARIABLES ==========================================================
@@ -52,9 +54,9 @@ extern float current_mA = 0;
 extern float loadvoltage = 0; 
 extern float power_mW = 0; 
 
-HUSKYLENSResult*  huskylens_arrow;  //pointer to a HUSKYLENS result type
+extern HUSKYLENSResult*  huskylens_arrow;  //pointer to a HUSKYLENS result type
 
-enum VehicleState{ 
+extern enum VehicleState{ 
   IDLE, 
   DRIVING, 
   RECHARGING 
