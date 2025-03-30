@@ -2,14 +2,13 @@
 
 For Milestone 2, please review the following files.
 
-1. INA219_steering_speed_test > INA219_steering_speed_test.ino `(steering servos, controlling speed, reading from INA219)`
-2. bluetooth_test > bluetooth_test.ino `(Bluetooth communication)`
-3. HUSKYLENS_test > HUSKYLENS_test.ino `(interfacing w/ HUSKYLENS camera)`
-4. system_test > system_test.ino `(integrating Bluetooth, INA219, and camera)`
-5. speed_control_test > speed_control_test.ino `(experimenting with drive wheel PWM)`
-6. steering_angle_control_test > steering_angle_control_test.ino `(experimenting with steering servo PWM)`
 
-*note: 1-4 are the same files as in Milestone 1 but renamed for clarity*
+1. speed_control_test > speed_control_test.ino `(experimenting with drive wheel PWM)`
+2. steering_angle_control_test > steering_angle_control_test.ino `(experimenting with steering servo PWM)`
+3. skeleton > skeleton.ino `(setup and void loop, state diagram)`
+4. skeleton > ESP32_Vehicle.h `(header file for ESP32 Vehicle custom library)`
+5. skeleton > ESP32_Vehicle.cpp `(source file for ESP32 Vehicle custom library)`
+
 
 Software outline document placed in the Milestone 2 folder in our Teams channel.
 
