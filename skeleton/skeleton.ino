@@ -63,6 +63,8 @@ void loop() {
       //more stuff
       break;
     }
+
+    delay(5);
  
 
 }

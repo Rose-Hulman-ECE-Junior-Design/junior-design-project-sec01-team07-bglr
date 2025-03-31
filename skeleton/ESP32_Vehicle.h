@@ -44,6 +44,7 @@
 #define SPEED_MAX_INC             65
 
 #define THETA_TARGET              0.0
+#define BT_BUFFER_SIZE            255
 
 //============================================================================
 

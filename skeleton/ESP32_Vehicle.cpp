@@ -22,6 +22,9 @@ float Kp, Kd, Ki = 1;
 float dt, integral, derivative = 2;
 float prev_error = 0;
 
+char BT_buffer_incoming[BT_BUFFER_SIZE];
+String error = "None";
+
 // Global Variables (Initalizations) =========================
 float steeringAngle = 90.0;
 float motorSpeed = 50;
@@ -183,8 +186,19 @@ void readINA219(){
  */
 int readGUICommand(){
 
+  if (SerialBT.available()) {
+
+    //fill up a byte buffer rather than getting a string 
+    String incoming = SerialBT.readStringUntil('\n');
+    Serial.println("Received via BT: " + incoming);
+
+    return 1;
+    
+  }
+
   //if there is no input to be read, return 0
   //otherwise, return the message code
+  return 0;
   
 }   
 
@@ -204,9 +218,18 @@ void parseGUICommand(){
  */
 void sendDataLog(){
 
+  //update sensor readings
   readINA219();
-  //use values in global variables (current, voltage, power)
-  //package up the data
-  //send it out through BT link
+
+  String current = dtostrf(current_mA);           //convert INA219 floats to strings
+  String voltage = dtostrf(loadvoltage);
+  String power = dtostrf(power_mW);
+  String state = dtostrf((int)currentState);    //use to_string() or dtostrf() ??
+
+  //build up serial package of data, do some string manipulation
+  String package = "C:" + current + "V:" + voltage + "P:" + power + "S:" + state + "E:" + error;
+
   
+  SerialBT.write(package); //send it out through BT link
+
 }      
