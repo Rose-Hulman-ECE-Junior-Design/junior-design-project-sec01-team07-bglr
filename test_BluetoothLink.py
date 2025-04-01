@@ -6,9 +6,10 @@ import time
 print("Hello CK!")
 
 
-port = 'COM6'
+port = 'COM11'
 
 baud_rate = 9600
+num_bytes = 48;
 
 
 try:
@@ -19,13 +20,14 @@ try:
 
 
     while 1:
-        command = input("What would you like to send? ")
-        print("Sending: " + command)
+        #command = input("What would you like to send? ")
+        #print("Sending: " + command)
         
         #bluetooth_serial.write(command)
 
-        response = bluetooth_serial.read()
+        response = bluetooth_serial.read(num_bytes)
         print(response)
+        print('======')
 
 
 except serial.SerialException as e:

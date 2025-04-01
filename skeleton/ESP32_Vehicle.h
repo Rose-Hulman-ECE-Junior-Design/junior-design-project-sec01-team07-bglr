@@ -46,6 +46,11 @@
 #define THETA_TARGET              0.0
 #define BT_BUFFER_SIZE            255
 
+#define NUM_DIGITS_AFTER_DECIMAL  3
+#define FLOAT_MIN_WIDTH           6
+#define FLOAT_BUFF_SIZE           8
+#define PACKAGE_SIZE              80
+
 //============================================================================
 
 // GLOBAL VARIABLES (Declarations Only) ======================================

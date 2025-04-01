@@ -221,15 +221,21 @@ void sendDataLog(){
   //update sensor readings
   readINA219();
 
-  String current = dtostrf(current_mA);           //convert INA219 floats to strings
-  String voltage = dtostrf(loadvoltage);
-  String power = dtostrf(power_mW);
-  String state = dtostrf((int)currentState);    //use to_string() or dtostrf() ??
-
-  //build up serial package of data, do some string manipulation
-  String package = "C:" + current + "V:" + voltage + "P:" + power + "S:" + state + "E:" + error;
-
+  char current[FLOAT_BUFF_SIZE], voltage[FLOAT_BUFF_SIZE], power[FLOAT_BUFF_SIZE], state[FLOAT_BUFF_SIZE];
   
-  SerialBT.write(package); //send it out through BT link
+  dtostrf(current_mA, FLOAT_MIN_WIDTH, NUM_DIGITS_AFTER_DECIMAL, current);           //convert INA219 floats to strings
+  dtostrf(loadvoltage, FLOAT_MIN_WIDTH, NUM_DIGITS_AFTER_DECIMAL, voltage);
+  dtostrf(power_mW, FLOAT_MIN_WIDTH, NUM_DIGITS_AFTER_DECIMAL, power);
+  dtostrf((float)currentState, FLOAT_MIN_WIDTH, NUM_DIGITS_AFTER_DECIMAL, state);
+
+  //strip out the null terminator character from each??
+  //build up serial package of data, do some string manipulation
+  char package[PACKAGE_SIZE]; // Adjust size as needed
+  sprintf(package, "I:%s V:%s P:%s S:%s E:%s", current, voltage, power, state, error);
+  
+  //String package = "I:" + current + " V:" + voltage + " P:" + power + " S:" + state + " E:" + error;
+  Serial.println(package);
+  SerialBT.println(package); //
+  //SerialBT.write(package); //send raw bytes of data through BT Link
 
 }      
