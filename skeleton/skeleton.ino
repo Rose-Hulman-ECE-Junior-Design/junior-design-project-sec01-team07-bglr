@@ -29,6 +29,9 @@ void setup() {
 
   currentState = DRIVING;
 
+
+  Serial.println("FINISHED WITH SETUP.");
+
 }
 
 
@@ -39,8 +42,14 @@ void loop() {
   //check for Bluetooth Input
   readGUICommand();
   sendDataLog();
+
+  steeringAngle = calculateSteeringAngle();
+  setSteeringAngle(steeringAngle);
+  ledcWrite(SPEED_SERVO, 270);
+
+  delay(10);
   
-  switch (currentState){
+/*  switch (currentState){
     case IDLE:
       Serial.println("Vehicle is now in IDLE state.");
       //turn off the 
@@ -65,6 +74,6 @@ void loop() {
     }
 
     delay(500);
- 
+ */
 
 }

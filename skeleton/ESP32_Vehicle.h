@@ -25,10 +25,10 @@
 #define STEERING_SERVO 32
 #define SPEED_SERVO 33
 
-#define SERVO_FREQ 50                             // 50 Hz, 
-#define SERVO_PERIOD 20                           // Period = 20ms
-#define PWM_RESOLUTION 12                         //12-bit resolution
-#define MAX_COUNT 4095                            //2^PWM_RESOLUTION - 1
+#define SERVO_FREQ                50                             // 50 Hz, 
+#define SERVO_PERIOD              20                           // Period = 20ms
+#define PWM_RESOLUTION            12                         //12-bit resolution
+#define MAX_COUNT                 4095                 //2^PWM_RESOLUTION - 1
 
 #define STEERING_MIN_PW           1               //minimum pulse width, ms
 #define STEERING_MAX_PW           2               //max pulse width, ms
@@ -62,8 +62,6 @@ extern float busvoltage;
 extern float current_mA; 
 extern float loadvoltage; 
 extern float power_mW; 
-
-extern HUSKYLENSResult*  huskylens_arrow;  //pointer to a HUSKYLENS result type
 
 enum VehicleState{ 
   IDLE, 

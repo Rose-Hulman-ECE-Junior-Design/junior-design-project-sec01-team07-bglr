@@ -34,8 +34,6 @@ float current_mA = 0;
 float loadvoltage = 0;
 float power_mW = 0;
 
-HUSKYLENSResult* huskylens_arrow = 0; // Initialize pointer
-
 VehicleState currentState = IDLE;
 
 BluetoothSerial SerialBT;
@@ -142,8 +140,21 @@ void setServoSpeed(float angle){
  * Uses the PID control algorithm to calculate the correct steering angle
  */
 float calculateSteeringAngle(){
+   if (!huskylens.request(1) || !huskylens.isLearned() || !huskylens.available()){
+        Serial.println("No block or arrow appears.");
+        return steeringAngle;
+   }
+   
    HUSKYLENSResult result = huskylens.read();
    //check if this returned an arrow
+   if ((result.yTarget - result.yOrigin) == 0){
+       Serial.println("Did not get a valid arrow. ");
+       return steeringAngle;
+    }
+
+   Serial.println(String()+F("Arrow:xOrigin=")+result.xOrigin+F(",yOrigin=")+result.yOrigin+F(",xTarget=")+result.xTarget+F(",yTarget=")+result.yTarget+F(",ID=")+result.ID);
+
+
    float error = THETA_TARGET - tan((result.xTarget - result.xOrigin) / (result.yTarget - result.yOrigin));
 
 //   float P = Kp * error;
