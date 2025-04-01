@@ -40,30 +40,30 @@ void loop() {
   readGUICommand();
   sendDataLog();
   
-//  switch (currentState){
-//    case IDLE:
-//      Serial.println("Vehicle is now in IDLE state.");
-//      //turn off the 
-//      break;
-//      
-//    case DRIVING:
-//      Serial.println("Vehicle is now in DRIVING state.");
-//      setSteeringAngle(calculateSteeringAngle());
-//      setServoSpeed(calculateServoSpeed());
-//      //stuff
-//      break;
-//      
-//    case RECHARGING:
-//      Serial.println("Vehicle is now in RECHARGING state.");
-//      //stuff
-//      break;
-//      
-//    default:
-//      Serial.println("Vehicle is now in DEFAULT state.");
-//      //more stuff
-//      break;
-//    }
-//
+  switch (currentState){
+    case IDLE:
+      Serial.println("Vehicle is now in IDLE state.");
+      //turn off the 
+      break;
+      
+    case DRIVING:
+      Serial.println("Vehicle is now in DRIVING state.");
+      setSteeringAngle(calculateSteeringAngle());
+      setServoSpeed(90.0);
+      //stuff
+      break;
+      
+    case RECHARGING:
+      Serial.println("Vehicle is now in RECHARGING state.");
+      //stuff
+      break;
+      
+    default:
+      Serial.println("Vehicle is now in DEFAULT state.");
+      //more stuff
+      break;
+    }
+
     delay(500);
  
 

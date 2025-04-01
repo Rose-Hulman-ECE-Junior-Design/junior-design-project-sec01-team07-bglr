@@ -18,12 +18,12 @@
 #include "ESP32_Vehicle.h"
 
 
-float Kp, Kd, Ki = 1;
-float dt, integral, derivative = 2;
-float prev_error = 0;
+float Kp = 0.65;
+//float Kd, Ki = 1;
+//float dt, integral, derivative = 2;
+//float prev_error = 0;
 
 char BT_buffer_incoming[BT_BUFFER_SIZE];
-String error = "None";
 
 // Global Variables (Initalizations) =========================
 float steeringAngle = 90.0;
@@ -146,16 +146,16 @@ float calculateSteeringAngle(){
    //check if this returned an arrow
    float error = THETA_TARGET - tan((result.xTarget - result.xOrigin) / (result.yTarget - result.yOrigin));
 
-   float P = Kp * error;
-   integral += error * dt;
-   float I = Ki * integral;
+//   float P = Kp * error;
+//   integral += error * dt;
+//   float I = Ki * integral;
 
-   derivative = (error - prev_error) / dt;
-   float D = Kd * derivative;
+//   derivative = (error - prev_error) / dt;
+//   float D = Kd * derivative;
 
-   prev_error = error;
+//   prev_error = error;
    
-   return P + I + D;
+   return Kp * error;
 
    //TODO:
    //make sure the returned steering angle does not exceed servo range
@@ -231,9 +231,9 @@ void sendDataLog(){
   //strip out the null terminator character from each??
   //build up serial package of data, do some string manipulation
   char package[PACKAGE_SIZE]; // Adjust size as needed
-  sprintf(package, "I:%s V:%s P:%s S:%s E:%s", current, voltage, power, state, error);
+  sprintf(package, "I:%s V:%s P:%s S:%s ", current, voltage, power, state);
   
-  //String package = "I:" + current + " V:" + voltage + " P:" + power + " S:" + state + " E:" + error;
+  //String package = "I:" + current + " V:" + voltage + " P:" + power + " S:" + state;
   Serial.println(package);
   SerialBT.println(package); //
   //SerialBT.write(package); //send raw bytes of data through BT Link
