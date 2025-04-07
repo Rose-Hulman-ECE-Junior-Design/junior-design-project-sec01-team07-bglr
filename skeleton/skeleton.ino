@@ -6,11 +6,12 @@
  * 
  */
 
-#pragma once
-#include <SoftwareSerial.h>   //include the espsoftwareserial library
-#include <Wire.h>
-#include <Adafruit_INA219.h>
+//#pragma once
 #include "HUSKYLENS.h"
+#include <SoftwareSerial.h>   //include the espsoftwareserial library
+//#include <Wire.h>
+#include <Adafruit_INA219.h>
+
 #include "SoftwareSerial.h"
 #include "BluetoothSerial.h"
 
@@ -20,12 +21,13 @@
 // VOID SETUP ===========================================================================
 void setup() {
   initSerialMonitor();
-  SerialBT.begin("CurrentHogs_ESP32_SPP_Device");       // This is the Bluetooth device name
-  Serial.println("Bluetooth SPP Started. Pair your device.");
-  initINA219();
   initHUSKYLENS();
-  initSteeringServo();
-  initSpeedServo();
+  //SerialBT.begin("CurrentHogs_ESP32_SPP_Device");       // This is the Bluetooth device name
+  //Serial.println("Bluetooth SPP Started. Pair your device.");
+  //initINA219();
+  
+  //initSteeringServo();
+  //initSpeedServo();
 
   currentState = DRIVING;
 
@@ -40,14 +42,19 @@ void setup() {
 void loop() {
 
   //check for Bluetooth Input
-  readGUICommand();
-  sendDataLog();
+//  readGUICommand();
+//  sendDataLog();
 
-  steeringAngle = calculateSteeringAngle();
-  setSteeringAngle(steeringAngle);
-  ledcWrite(SPEED_SERVO, 270);
+//  steeringAngle = calculateSteeringAngle();
+//  setSteeringAngle(steeringAngle);
+//  ledcWrite(SPEED_SERVO, 270);
 
-  delay(10);
+
+HUSKYLENSResult result = huskylens.read();
+Serial.println(String()+F("Arrow:xOrigin=")+result.xOrigin+F(",yOrigin=")+result.yOrigin+F(",xTarget=")+result.xTarget+F(",yTarget=")+result.yTarget+F(",ID=")+result.ID);
+
+
+  delay(100);
   
 /*  switch (currentState){
     case IDLE:

@@ -10,7 +10,7 @@
  * Author: CKG, LL
  */
 #include <SoftwareSerial.h>   //include the espsoftwareserial library
-#include <Wire.h>
+//#include <Wire.h>
 #include <Adafruit_INA219.h>
 #include "HUSKYLENS.h"
 #include "SoftwareSerial.h"
@@ -79,7 +79,7 @@ void initINA219(void){
  * Initialize the HUSKYLENS camera.
  */
 void initHUSKYLENS(){
-  Wire.begin();
+  Wire.begin(HUSKYLENS_SDA_PIN, HUSKYLENS_SCL_PIN);
   while (!huskylens.begin(Wire)){
         Serial.println(F("Begin failed!"));
         Serial.println(F("1.Please recheck the \"Protocol Type\" in HUSKYLENS (General Settings>>Protol Type>>I2C)"));
@@ -87,6 +87,10 @@ void initHUSKYLENS(){
         delay(100);
   }
   huskylens.writeAlgorithm(ALGORITHM_LINE_TRACKING); //Switch the algorithm to line tracking.
+  Serial.println("Initialized HUSKYLENS. ===================");
+  delay(100);
+  
+  
 }
 
 /* 
@@ -137,25 +141,46 @@ void setServoSpeed(float angle){
 }
 
 /*
+ * Read the HUSKYLENS camera
+ */
+HUSKYLENSResult readHUSKYLENS(){
+    HUSKYLENSResult result;
+    if (!huskylens.request(1)) {Serial.println(F("Fail to request data from HUSKYLENS, recheck the connection!"));}
+    else if(!huskylens.isLearned()) {Serial.println(F("Nothing learned, press learn button on HUSKYLENS to learn one!"));}
+    else if(!huskylens.available()) Serial.println(F("No block or arrow appears on the screen!"));
+    else
+    {
+        result = huskylens.read();
+        Serial.println(String()+F("Arrow:xOrigin=")+result.xOrigin+F(",yOrigin=")+result.yOrigin+F(",xTarget=")+result.xTarget+F(",yTarget=")+result.yTarget+F(",ID=")+result.ID);
+        //printResult(result);
+    }
+
+    return result;
+  
+}
+
+/*
  * Uses the PID control algorithm to calculate the correct steering angle
  */
 float calculateSteeringAngle(){
-   if (!huskylens.request(1) || !huskylens.isLearned() || !huskylens.available()){
-        Serial.println("No block or arrow appears.");
-        return steeringAngle;
-   }
+    
+    HUSKYLENSResult result = readHUSKYLENS();
+    
+    if (result.command != COMMAND_RETURN_ARROW){
+       Serial.println("Object unknown!");
+       return steeringAngle;
+    }
+
    
-   HUSKYLENSResult result = huskylens.read();
    //check if this returned an arrow
    if ((result.yTarget - result.yOrigin) == 0){
        Serial.println("Did not get a valid arrow. ");
        return steeringAngle;
     }
 
-   Serial.println(String()+F("Arrow:xOrigin=")+result.xOrigin+F(",yOrigin=")+result.yOrigin+F(",xTarget=")+result.xTarget+F(",yTarget=")+result.yTarget+F(",ID=")+result.ID);
-
-
-   float error = THETA_TARGET - tan((result.xTarget - result.xOrigin) / (result.yTarget - result.yOrigin));
+   
+   float error = THETA_TARGET - ( atan((result.xTarget - result.xOrigin) / (result.yTarget - result.yOrigin)) ) * RAD_TO_DEG;
+   Serial.print("Error angle (deg)"); Serial.println(error);
 
 //   float P = Kp * error;
 //   integral += error * dt;

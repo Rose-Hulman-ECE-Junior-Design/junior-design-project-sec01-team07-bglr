@@ -12,7 +12,7 @@
 //include any things we need
 #pragma once
 #include <SoftwareSerial.h>   //include the espsoftwareserial library
-#include <Wire.h>
+//#include <Wire.h>
 #include <Adafruit_INA219.h>
 #include "HUSKYLENS.h"
 #include "SoftwareSerial.h"
@@ -50,7 +50,11 @@
 #define FLOAT_MIN_WIDTH           6
 #define FLOAT_BUFF_SIZE           8
 #define PACKAGE_SIZE              80
+#define RAD_TO_DEG                57.29577951308232
 
+
+#define HUSKYLENS_SDA_PIN         21
+#define HUSKYLENS_SCL_PIN         22
 //============================================================================
 
 // GLOBAL VARIABLES (Declarations Only) ======================================

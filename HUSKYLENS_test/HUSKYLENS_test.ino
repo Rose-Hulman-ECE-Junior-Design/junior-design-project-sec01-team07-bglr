@@ -32,6 +32,8 @@ void loop() {
         printResult(result);
     }
 
+    delay(100);
+
 }
 
 
