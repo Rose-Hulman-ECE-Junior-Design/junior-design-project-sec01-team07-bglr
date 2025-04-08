@@ -18,7 +18,8 @@
 #include "ESP32_Vehicle.h"
 
 
-float Kp = 0.65;
+float Kp1 = 1.2;
+float Kp2 = 0.5;
 //float Kd, Ki = 1;
 //float dt, integral, derivative = 2;
 //float prev_error = 0;
@@ -90,7 +91,6 @@ void initHUSKYLENS(){
   Serial.println("Initialized HUSKYLENS. ===================");
   delay(100);
   
-  
 }
 
 /* 
@@ -99,7 +99,8 @@ void initHUSKYLENS(){
 void initSteeringServo(){
   ledcAttach(STEERING_SERVO, SERVO_FREQ, PWM_RESOLUTION);
   delay(1000);
-  ledcWrite(STEERING_SERVO, 307); //initialize to 307 - 90 degrees
+  setSteeringAngle(STEERING_CENTER);
+  //ledcWrite(STEERING_SERVO, STEERING_CENTER); //initialize to 307 - 90 degrees
 
   Serial.println("Steering Servo initialized to 90 deg.");
 }
@@ -121,6 +122,10 @@ void initSpeedServo(){
  */
 void setSteeringAngle(float angle){
 
+  //if ( angle > STEERING_MAX_ANGLE || angle < STEERING_MIN_ANGLE ) {
+  //  return;
+  //}
+  
   float pw = STEERING_MIN_PW + ( (angle/180.0) * STEERING_RANGE);
   uint32_t duty = (uint32_t) (MAX_COUNT * (pw / SERVO_PERIOD));
   Serial.print("Steering servo set to "); Serial.print(angle); Serial.print(", duty "); Serial.println(duty); 
@@ -151,8 +156,7 @@ HUSKYLENSResult readHUSKYLENS(){
     else
     {
         result = huskylens.read();
-        Serial.println(String()+F("Arrow:xOrigin=")+result.xOrigin+F(",yOrigin=")+result.yOrigin+F(",xTarget=")+result.xTarget+F(",yTarget=")+result.yTarget+F(",ID=")+result.ID);
-        //printResult(result);
+        //Serial.println(String()+F("Arrow:xOrigin=")+result.xOrigin+F(",yOrigin=")+result.yOrigin+F(",xTarget=")+result.xTarget+F(",yTarget=")+result.yTarget+F(",ID=")+result.ID);
     }
 
     return result;
@@ -171,16 +175,26 @@ float calculateSteeringAngle(){
        return steeringAngle;
     }
 
-   
    //check if this returned an arrow
    if ((result.yTarget - result.yOrigin) == 0){
        Serial.println("Did not get a valid arrow. ");
        return steeringAngle;
     }
 
+   float r = ((float)(result.xTarget - result.xOrigin) )/ ( (float)(result.yTarget - result.yOrigin));
+   float error = THETA_TARGET + ( atan(r) * RAD_TO_DEG );
+
+   //find the midpoint of the line, compare to the center of the screen
+   float center_error = ((float)(result.xOrigin + result.xTarget))/2 - HUSKYLENS_X_CENTER;
    
-   float error = THETA_TARGET - ( atan((result.xTarget - result.xOrigin) / (result.yTarget - result.yOrigin)) ) * RAD_TO_DEG;
+   //float r2 = ((float)(result.xOrigin + result.xTarget))/2 - HUSKYLENS_X_CENTER;
+   //float center_error = (atan(r2 / HUSKYLENS_Y_HEIGHT) * RAD_TO_DEG );
+   
+   
    Serial.print("Error angle (deg)"); Serial.println(error);
+
+
+   //if error is very small
 
 //   float P = Kp * error;
 //   integral += error * dt;
@@ -191,7 +205,7 @@ float calculateSteeringAngle(){
 
 //   prev_error = error;
    
-   return Kp * error;
+   return Kp1 * error - Kp2 * center_error;
 
    //TODO:
    //make sure the returned steering angle does not exceed servo range
@@ -220,21 +234,18 @@ void readINA219(){
 /*
  * Read GUI from Bluetooth link
  */
-int readGUICommand(){
+String readGUICommand(){
 
   if (SerialBT.available()) {
 
-    //fill up a byte buffer rather than getting a string 
     String incoming = SerialBT.readStringUntil('\n');
     Serial.println("Received via BT: " + incoming);
 
-    return 1;
+    return incoming;
     
   }
 
-  //if there is no input to be read, return 0
-  //otherwise, return the message code
-  return 0;
+  return "";  //return an empty string if not available
   
 }   
 
@@ -244,8 +255,27 @@ int readGUICommand(){
  */
 void parseGUICommand(){
   //interpret the GUI command
+  String command = readGUICommand();
+  Serial.print("Received: "); Serial.println(command);
 
   //could change the global state here...
+  if (command.equals("Start")){
+    currentState = DRIVING;
+    Serial.println("Vehicle is now in DRIVING state.");
+    //TODO: other stuff
+    
+   }else if (command.equals("Stop")){
+    currentState = IDLE;
+    Serial.println("Vehicle is now in IDLE state.");
+    
+   } else if (command.equals("Recharge")){
+    currentState = RECHARGING;
+    Serial.println("Vehicle is now in RECHARGING state.");
+    
+   }else {
+    //Serial.println("Command could not be parsed."); 
+   }
+   
 }
 
 
@@ -268,9 +298,8 @@ void sendDataLog(){
   //build up serial package of data, do some string manipulation
   char package[PACKAGE_SIZE]; // Adjust size as needed
   sprintf(package, "I:%s V:%s P:%s S:%s ", current, voltage, power, state);
-  
-  //String package = "I:" + current + " V:" + voltage + " P:" + power + " S:" + state;
-  Serial.println(package);
+
+  //Serial.println(package);
   SerialBT.println(package); //
   //SerialBT.write(package); //send raw bytes of data through BT Link
 

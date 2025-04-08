@@ -35,6 +35,7 @@
 #define STEERING_RANGE            1
 #define STEERING_MAX_ANGLE        165.0
 #define STEERING_MIN_ANGLE        25.0
+#define STEERING_CENTER           100.0            // center (straight) steering position, degrees
 
 #define SPEED_MIN_PW              1                 //minimum pulse width, ms
 #define SPEED_MAX_PW              2                 //max pulse width, ms
@@ -55,6 +56,8 @@
 
 #define HUSKYLENS_SDA_PIN         21
 #define HUSKYLENS_SCL_PIN         22
+#define HUSKYLENS_X_CENTER        160
+#define HUSKYLENS_Y_HEIGHT        240
 //============================================================================
 
 // GLOBAL VARIABLES (Declarations Only) ======================================
@@ -75,7 +78,6 @@ enum VehicleState{
 
 extern VehicleState currentState;
 
-//extern Serial;
 extern BluetoothSerial SerialBT;
 extern HUSKYLENS huskylens;
 extern Adafruit_INA219 ina219;
@@ -95,9 +97,10 @@ float calculateSteeringAngle();
 float calculateServoSpeed();
 
 void readINA219();       //
-int readGUICommand();   // parse command from the GUI
+String readGUICommand();   // parse command from the GUI
 void parseGUICommand();
 void sendDataLog();      // send the data log to the GUI
+HUSKYLENSResult readHUSKYLENS();
 
 
 #endif      // ESP32_VEHICLE_H

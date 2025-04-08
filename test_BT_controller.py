@@ -1,6 +1,6 @@
 import threading
 import time
-import pandas
+#import pandas
 import serial
 import time
 
@@ -31,8 +31,8 @@ def parse_dataLog(response):
 
 #=========================================================================================
 """ Reads power data logs from ESP32"""
-def handle_Rx():
-    
+def handle_Rx(bluetooth_serial):
+    print("Starting Rx thread.")
     while 1:
     
         response = bluetooth_serial.read(num_bytes)
@@ -46,13 +46,15 @@ def handle_Rx():
     
 #=========================================================================================    
 """ Sends user commands to the ESP32"""
-def handle_Tx():
-    
+def handle_Tx(bluetooth_serial):
+    print("Starting Tx thread.")
     while 1:
         command = input("What would you like to send? ")
-        print("Sending: " + command)
+        print("Sending:" + command)
         
-        bluetooth_serial.write(command)
+        # serial.write wants stuff in bytes
+        # for future reference, can do b"Stop" or b"Start"
+        bluetooth_serial.write(command.encode('utf-8'))
         
         #TODO: if connection is ever lost, break
     
@@ -70,12 +72,14 @@ try:
         threads = []
         
         #dispatch threads
-        rx_thread = threading.Thread(target=handle_Rx )
+        rx_thread = threading.Thread(target=handle_Rx, args=(bluetooth_serial,) )
         threads.append(rx_thread)
-        rx_thread.start()
+        
             
-        tx_thread = threading.Thread(target=handle_Tx)
+        tx_thread = threading.Thread(target=handle_Tx, args=(bluetooth_serial,))
         threads.append(tx_thread)
+
+        rx_thread.start()
         tx_thread.start()
             
 
