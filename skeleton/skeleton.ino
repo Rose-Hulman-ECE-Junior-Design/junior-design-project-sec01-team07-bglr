@@ -20,7 +20,7 @@ void setup() {
   initSteeringServo();
   initSpeedServo();
 
-  currentState = DRIVING;
+  currentState = IDLE;
 
 
   Serial.println("FINISHED WITH SETUP.");
@@ -34,7 +34,7 @@ void loop() {
 
   //check for Bluetooth Input
   parseGUICommand();
-  //sendDataLog();
+  sendDataLog();
   
   switch (currentState){
     case IDLE:
@@ -60,7 +60,7 @@ void loop() {
       break;
     }
 
-    //delay(80);
+    delay(500);
 
 
 }

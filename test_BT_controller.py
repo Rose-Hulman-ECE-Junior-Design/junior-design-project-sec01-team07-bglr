@@ -14,20 +14,41 @@ print("Hello CK!")
 port = 'COM11'
 
 baud_rate = 9600
-num_bytes = 48
+num_bytes = 21
 
 bluetooth_serial = 0
+
+time_step = 0.5
+
+running_time = 0
 
 
 
 #=========================================================================================
 """ Separate the numbers out from the response string"""
 def parse_dataLog(response):
-    current = 0             # current in mA
-    voltage = 0             # voltage in V
-    power = 0               # power in mA
-    state = 1               # state enumeration
-    print(response)
+    values = response.split(":")
+
+    #print(values)
+    
+    current = float(values[0])             # current in mA
+    voltage = float(values[1])             # voltage in V
+    power = current * voltage              # power in mW
+    #state = float(values[2])               # state enumeration
+
+    
+
+    energy = power * time_step
+
+    global running_time
+
+    print("TIME (s): " + str(running_time))
+    print("Current (mA): " + str(current))
+    print("Voltage (V): " + str(voltage))
+    print("Power (mW): " + str(power))
+    print("Energy (J):" + str(energy))
+
+    running_time += time_step
 
 #=========================================================================================
 """ Reads power data logs from ESP32"""
@@ -36,10 +57,13 @@ def handle_Rx(bluetooth_serial):
     while 1:
     
         response = bluetooth_serial.read(num_bytes)
-        print(response)
-        print('======')
+        response_str = str(response)[2:]
+        
+        #print(response_str)
+        print('====================')
         
         # parse the response
+        parse_dataLog(response_str)
     
         #TODO: if connection is ever lost, break
     
@@ -76,11 +100,11 @@ try:
         threads.append(rx_thread)
         
             
-        tx_thread = threading.Thread(target=handle_Tx, args=(bluetooth_serial,))
-        threads.append(tx_thread)
+        #tx_thread = threading.Thread(target=handle_Tx, args=(bluetooth_serial,))
+        #threads.append(tx_thread)
 
         rx_thread.start()
-        tx_thread.start()
+        #tx_thread.start()
             
 
         for t in threads:
