@@ -1,16 +1,17 @@
-# Milestone 2 Submission
+# Milestone 3 Submission
 
-For Milestone 2, please review the following files.
-
-
-1. speed_control_test > speed_control_test.ino `(experimenting with drive wheel PWM)`
-2. steering_angle_control_test > steering_angle_control_test.ino `(experimenting with steering servo PWM)`
-3. skeleton > skeleton.ino `(setup and void loop, state diagram)`
-4. skeleton > ESP32_Vehicle.h `(header file for ESP32 Vehicle custom library)`
-5. skeleton > ESP32_Vehicle.cpp `(source file for ESP32 Vehicle custom library)`
+For Milestone 3, please review the following files.
 
 
-Software outline document placed in the Milestone 2 folder in our Teams channel.
+1. HUSKYLENS_test > HUSKYLENS_test.ino `(added delay for sampling camera data)`
+2. skeleton > ESP32_Vehicle.cpp `(contains working P controller for line following and updated datalogging)`
+3. skeleton > ESP32_Vehicle.h `(added constants and initialization functions)`
+4. skeleton > skeleton.ino `(updated state conditions and Bluetooth)`
+5. test_BT_controller.py `(provide data outputs to GUI from BT link)`
+6. test_BluetoothLink.py `(establish BT link on startup)`
+7. test_Python_threads.py `(run parallel threads for BT transmission/reception)`
+
+
 
 ## Documentation Plan
 ### 1. The relationship of the competition to ECE technology
