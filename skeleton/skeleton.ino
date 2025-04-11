@@ -1,29 +1,31 @@
 /*
  * Skeleton Code for ESP32 Firmware.
+ * 
  * Implements state machine for vehicle.
  * 
  * Author: CKG
  * 
  */
 
-
-#include "ESP32_Vehicle.h"      //custom library
+#include "ESP32_Vehicle.h"    //custom library
 
 // VOID SETUP ===========================================================================
 void setup() {
+  //initialize all devices
   initSerialMonitor();
   initHUSKYLENS();
   SerialBT.begin("CurrentHogs_ESP32_SPP_Device");       // This is the Bluetooth device name
   Serial.println("Bluetooth SPP Started. Pair your device.");
   initINA219();
-  
   initSteeringServo();
   initSpeedServo();
 
   currentState = IDLE;
-
-
+  
   Serial.println("FINISHED WITH SETUP.");
+
+
+  //TODO: set up a 2 Hz timer to run sendDataLog() every 0.5 seconds.
 
 }
 

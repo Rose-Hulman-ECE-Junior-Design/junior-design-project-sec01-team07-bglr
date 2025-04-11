@@ -1,13 +1,13 @@
 /*
  * ESP32_Vehicle Source File
  * 
- * Contains several important functions:
+ * Contains functions that will be run by the skeleton.ino file.
  * 
- *  - init functions
+ *  - initialization functions
  *  - PID controller calculation functions
  *  - GUI communication functions
  * 
- * Author: CKG, LL
+ * Author: CKG, LL, BB
  */
 #include <SoftwareSerial.h>   //include the espsoftwareserial library
 //#include <Wire.h>
@@ -40,7 +40,6 @@ VehicleState currentState = IDLE;
 BluetoothSerial SerialBT;
 HUSKYLENS huskylens;
 Adafruit_INA219 ina219;
-//Serial;
 
 
 /* 
@@ -94,7 +93,7 @@ void initHUSKYLENS(){
 }
 
 /* 
- * Initialize the Steering Servo
+ * Initialize the Steering Servo.
  */
 void initSteeringServo(){
   ledcAttach(STEERING_SERVO, SERVO_FREQ, PWM_RESOLUTION);
@@ -106,7 +105,7 @@ void initSteeringServo(){
 }
 
 /*
- * Initialize the speed servo
+ * Initialize the speed servo.
  */
 void initSpeedServo(){
   
@@ -114,11 +113,14 @@ void initSpeedServo(){
   delay(1000);
   uint32_t zeroSpeedPWMCount = 204;
   ledcWrite(SPEED_SERVO, zeroSpeedPWMCount);
-  delay(5000);
 }
 
 /*
  * Set the angle of the steering servo, in degrees.
+ * 
+ * Inputs - angle, as a float
+ * Outputs - none
+ * 
  */
 void setSteeringAngle(float angle){
 
@@ -134,7 +136,12 @@ void setSteeringAngle(float angle){
 }
 
 /*
- * Set the speed of the speed servo, as a percentage of total speed.
+ * Set the speed of the speed servo, as an angle
+ * 
+ * Inputs - angle, as a float
+ * Outputs - none
+ * 
+ * TODO: Change this to a % input, or directly from duty cycle
  */
 void setServoSpeed(float angle){
 
@@ -143,10 +150,15 @@ void setServoSpeed(float angle){
   //Serial.print("Speed servo set to duty "); Serial.println(duty); 
 
   ledcWrite(SPEED_SERVO, duty);
+
+  //TODO: add limit checks for the duty cycle
 }
 
 /*
- * Read the HUSKYLENS camera
+ * Read the HUSKYLENS camera. Make all appropriate checks.
+ * 
+ * Inputs - none
+ * Outputs - HUSKYLENSResult type, aka the arrow
  */
 HUSKYLENSResult readHUSKYLENS(){
     HUSKYLENSResult result;
@@ -164,38 +176,36 @@ HUSKYLENSResult readHUSKYLENS(){
 }
 
 /*
- * Uses the PID control algorithm to calculate the correct steering angle
+ * Use a P control algorithm to calculate the correct steering angle
+ * 
+ * Inputs - none
+ * Outputs - target steering angle, in degrees, as a float
  */
 float calculateSteeringAngle(){
     
     HUSKYLENSResult result = readHUSKYLENS();
     
-    if (result.command != COMMAND_RETURN_ARROW){
+    if (result.command != COMMAND_RETURN_ARROW){  //check if we got a valid arrow object
        Serial.println("Object unknown!");
        return steeringAngle;
     }
 
-   //check if this returned an arrow
-   if ((result.yTarget - result.yOrigin) == 0){
+   if ((result.yTarget - result.yOrigin) == 0){  //make sure we don't accidentally divide by 0
        Serial.println("Did not get a valid arrow. ");
        return steeringAngle;
     }
 
+   //find the error angle from the direction of the arrow
    float r = ((float)(result.xTarget - result.xOrigin) )/ ( (float)(result.yTarget - result.yOrigin));
    float error = THETA_TARGET + ( atan(r) * RAD_TO_DEG );
 
    //find the midpoint of the line, compare to the center of the screen
    float center_error = ((float)(result.xOrigin + result.xTarget))/2 - HUSKYLENS_X_CENTER;
    
-   //float r2 = ((float)(result.xOrigin + result.xTarget))/2 - HUSKYLENS_X_CENTER;
-   //float center_error = (atan(r2 / HUSKYLENS_Y_HEIGHT) * RAD_TO_DEG );
-   
-   
    //Serial.print("Error angle (deg)"); Serial.println(error);
 
 
-   //if error is very small
-
+//   Unimplemented PID controller
 //   float P = Kp * error;
 //   integral += error * dt;
 //   float I = Ki * integral;
@@ -213,14 +223,22 @@ float calculateSteeringAngle(){
 }
 
 /*
- * Uses PID control algorithm to calculate correct speed
+ * Uses power supply voltage to calculate correct speed
+ * in order to compensate for drop in voltage
  */
 float calculateServoSpeed(){
-  
+  //TODO: implement this
 }
 
 /*
- * Read data from the INA219 into the global variables
+ * Read data from the INA219 into the global variables.
+ * Will be called every time ESP32 Vehicle wants to package
+ * and send a data log to the GUI.
+ * 
+ * Inputs - none
+ * Outputs - none
+ * 
+ * Updates globals.
  */
 void readINA219(){
    shuntvoltage = ina219.getShuntVoltage_mV();
@@ -232,14 +250,16 @@ void readINA219(){
 
 
 /*
- * Read GUI from Bluetooth link
+ * Read data from Bluetooth link.
+ * 
+ * Inputs - none
+ * Outputs - serial data read, as a String
  */
 String readGUICommand(){
 
   if (SerialBT.available()) {
-
     String incoming = SerialBT.readStringUntil('\n');
-    Serial.println("Received via BT: " + incoming);
+    //Serial.println("Received via BT: " + incoming);
 
     return incoming;
     
@@ -251,18 +271,28 @@ String readGUICommand(){
 
 
 /*
- * Parse GUI command
+ * Parse an incoming GUI command. Will be called repeatedly
+ * in the main loop of skeleton.ino so the system may
+ * always be checking for updates from the GUI.
+ * 
+ * Inputs - none
+ * Outputs - none
  */
 void parseGUICommand(){
   //interpret the GUI command
   String command = readGUICommand();
+  
+  if (command.length() == 0){
+    return;
+  }
+  
   Serial.print("Received: "); Serial.println(command);
 
-  //could change the global state here...
+  //interpret each command, change state if necessary
+  //TODO: develop message key, determine other types of messages
   if (command.equals("Start")){
     currentState = DRIVING;
     Serial.println("Vehicle is now in DRIVING state.");
-    //TODO: other stuff
     
    }else if (command.equals("Stop")){
     currentState = IDLE;
@@ -280,7 +310,10 @@ void parseGUICommand(){
 
 
 /*
- * Send data log to the GUI via Bluetooth link
+ * Send data log to the GUI via Bluetooth link.
+ * 
+ * Inputs - none
+ * Outputs - none
  */
 void sendDataLog(){
 
@@ -288,19 +321,18 @@ void sendDataLog(){
   readINA219();
 
   char current[FLOAT_BUFF_SIZE], voltage[FLOAT_BUFF_SIZE], power[FLOAT_BUFF_SIZE], state[FLOAT_BUFF_SIZE];
-  
-  dtostrf(current_mA, FLOAT_MIN_WIDTH, NUM_DIGITS_AFTER_DECIMAL, current);           //convert INA219 floats to strings
+  //convert INA219 values from floats to strings
+  dtostrf(current_mA, FLOAT_MIN_WIDTH, NUM_DIGITS_AFTER_DECIMAL, current);           
   dtostrf(loadvoltage, FLOAT_MIN_WIDTH, NUM_DIGITS_AFTER_DECIMAL, voltage);
   dtostrf(power_mW, FLOAT_MIN_WIDTH, NUM_DIGITS_AFTER_DECIMAL, power);
   dtostrf((float)currentState, FLOAT_MIN_WIDTH, NUM_DIGITS_AFTER_DECIMAL, state);
 
-  //strip out the null terminator character from each??
-  //build up serial package of data, do some string manipulation
+  //concatenate serial package of data, do some string manipulation
   char package[FLOAT_BUFF_SIZE*3 + 2]; // Adjust size as needed
   sprintf(package, "%s:%s:%s", current, voltage, state);
 
-  Serial.println(package);
-  Serial.println(sizeof(package));
+  //Serial.println(package);
+  //Serial.println(sizeof(package));
   SerialBT.print(package); //
   //SerialBT.write(package, strlen(package)); //send raw bytes of data through BT Link
 

@@ -3,7 +3,7 @@
  * 
  * Header file for ESP32 Vehicle.
  * 
- * Author: CKG
+ * Author: CKG, BB
  */
 
 #ifndef ESP32_VEHICLE_H
@@ -20,18 +20,18 @@
 
 
 // CONSTANTS ==================================================================
-#define SERIAL_BAUD 115200
+#define SERIAL_BAUD               115200
 
-#define STEERING_SERVO 32
-#define SPEED_SERVO 33
+#define STEERING_SERVO            32
+#define SPEED_SERVO               33
 
-#define SERVO_FREQ                50                             // 50 Hz, 
-#define SERVO_PERIOD              20                           // Period = 20ms
-#define PWM_RESOLUTION            12                         //12-bit resolution
-#define MAX_COUNT                 4095                 //2^PWM_RESOLUTION - 1
+#define SERVO_FREQ                50            // 50 Hz, 
+#define SERVO_PERIOD              20            // Period = 20ms
+#define PWM_RESOLUTION            12            // 12-bit resolution
+#define MAX_COUNT                 4095          // 2^PWM_RESOLUTION - 1
 
-#define STEERING_MIN_PW           1               //minimum pulse width, ms
-#define STEERING_MAX_PW           2               //max pulse width, ms
+#define STEERING_MIN_PW           1             // minimum pulse width, ms
+#define STEERING_MAX_PW           2             // max pulse width, ms
 #define STEERING_RANGE            1
 #define STEERING_MAX_ANGLE        165.0
 #define STEERING_MIN_ANGLE        25.0
@@ -85,6 +85,8 @@ extern Adafruit_INA219 ina219;
 
 
 // FUNCTION PROTOTYPES =======================================================
+// See ESP32_Vehicle.cpp for headers and details.
+
 void initSerialMonitor();
 void initINA219();
 void initHUSKYLENS();
@@ -96,10 +98,10 @@ void setServoSpeed(float duty);
 float calculateSteeringAngle();
 float calculateServoSpeed();
 
-void readINA219();       //
-String readGUICommand();   // parse command from the GUI
+void readINA219();       
+String readGUICommand();  
 void parseGUICommand();
-void sendDataLog();      // send the data log to the GUI
+void sendDataLog();      
 HUSKYLENSResult readHUSKYLENS();
 
 
