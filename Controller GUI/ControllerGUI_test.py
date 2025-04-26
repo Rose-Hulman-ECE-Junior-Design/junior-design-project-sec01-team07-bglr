@@ -4,6 +4,7 @@ from PyQt6.QtWidgets import QApplication, QWidget, QLabel, QPushButton, QVBoxLay
 WINDOW_WIDTH = 1000
 WINDOW_HEIGHT = 800
 
+data_file = ""    #filepath to .csv file where data will be stored
 
 class LogViewer(QWidget):
     def __init__(self):
@@ -12,11 +13,38 @@ class LogViewer(QWidget):
         self.resize(WINDOW_WIDTH, WINDOW_HEIGHT)
 
         layout = QVBoxLayout()
-        label = QLabel("This is a second window!")
+        label = QLabel("This is a the power log viewer!")
+        
         layout.addWidget(label)
         self.setLayout(layout)
         
+    def plotPowerLog(self):
+        print("Plotting Power Log")
+        #TODO: Implement this    
+
+class RunViewer(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Run Viewer")
+        self.resize(WINDOW_WIDTH, WINDOW_HEIGHT)
         
+        self.start_button = QPushButton("Start")
+        self.stop_button = QPushButton("Stop")
+        
+        self.start_button.clicked.connect(send_START)
+        self.stop_button.clicked.connect(send_STOP)
+
+        layout = QVBoxLayout()
+        label = QLabel("This is the run viewer!")
+        layout.addWidget(label)
+        layout.addWidget(self.start_button)
+        layout.addWidget(self.stop_button)
+        self.setLayout(layout)
+        
+
+
+# ======================================================================================
+# ===== MAIN WINDOW ===========
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
@@ -41,13 +69,34 @@ class MainWindow(QWidget):
     def begin_run(self):
         print("Starting a new run.")
         #open the run window
+        self.runviewer_window = RunViewer()
+        self.runviewer_window.show()
 
     
     def open_logviewer_window(self):
-        self.second_window = LogViewer()
-        self.second_window.show()
+        self.logviewer_window = LogViewer()
+        self.logviewer_window.show()
         
+# ===============================================================================
+
+def send_START():
+    print("Sending START to vehicle.")
+    #TODO: implement
+
+def send_STOP():
+    print("Sending STOP to vehicle.")
+    #TODO: implement
+    
+def update_K():
+    print("Sending K to vehicle.")
+    #TODO: implement
+
+
         
+# ==============================================================================
+
+# TODO: establish BT connection
+      
 app = QApplication([])
 window = MainWindow()
 window.show()

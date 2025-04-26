@@ -1,6 +1,6 @@
 import threading
 import time
-#import pandas
+import csv
 import serial
 import time
 
@@ -12,8 +12,8 @@ print("Hello CK!")
 
 
 port = 'COM11'
+data_file = "dataLog_test1.csv"
 
-baud_rate = 9600
 num_bytes = 21
 
 bluetooth_serial = 0
@@ -22,6 +22,8 @@ time_step = 0.5
 
 running_time = 0
 
+bluetooth_serial = serial.Serial(port)
+serial_lock = threading.Lock()
 
 
 #=========================================================================================
@@ -48,16 +50,28 @@ def parse_dataLog(response):
     print("Power (mW): " + str(power))
     print("Energy (J):" + str(energy))
 
+    log = [running_time, voltage, current, power, energy]
+    
+    add_to_csv(data_file, log)
+    
     running_time += time_step
 
+
+def add_to_csv(filepath, row_data):
+    """Appends a list of values as a new row into the given CSV file."""
+    with open(filepath, mode="a", newline="") as file:  # "a" = append mode
+        writer = csv.writer(file)
+        writer.writerow(row_data)
+        
+        
 #=========================================================================================
 """ Reads power data logs from ESP32"""
-def handle_Rx(bluetooth_serial):
+def handle_Rx():
     print("Starting Rx thread.")
     while 1:
-    
-        response = bluetooth_serial.read(num_bytes)
-        response_str = str(response)[2:]
+        with serial_lock:
+            response = bluetooth_serial.read(num_bytes)
+        response_str = str(response)[2:]        #strip out the first two characters "b'"
         
         #print(response_str)
         print('====================')
@@ -70,7 +84,7 @@ def handle_Rx(bluetooth_serial):
     
 #=========================================================================================    
 """ Sends user commands to the ESP32"""
-def handle_Tx(bluetooth_serial):
+def handle_Tx():
     print("Starting Tx thread.")
     while 1:
         command = input("What would you like to send? ")
@@ -78,7 +92,8 @@ def handle_Tx(bluetooth_serial):
         
         # serial.write wants stuff in bytes
         # for future reference, can do b"Stop" or b"Start"
-        bluetooth_serial.write(command.encode('utf-8'))
+        with serial_lock:
+            bluetooth_serial.write(command.encode('utf-8'))
         
         #TODO: if connection is ever lost, break
     
@@ -88,7 +103,7 @@ def handle_Tx(bluetooth_serial):
     
 try:
     #attempt to establish a serial connection
-    bluetooth_serial = serial.Serial(port, baud_rate)
+    #bluetooth_serial = serial.Serial(port, baud_rate)
     print(bluetooth_serial.name)
     print(f"Connected to port {port} at {baud_rate} baud.")
 
@@ -100,8 +115,8 @@ try:
         threads.append(rx_thread)
         
             
-        #tx_thread = threading.Thread(target=handle_Tx, args=(bluetooth_serial,))
-        #threads.append(tx_thread)
+        tx_thread = threading.Thread(target=handle_Tx, args=(bluetooth_serial,))
+        threads.append(tx_thread)
 
         rx_thread.start()
         #tx_thread.start()
