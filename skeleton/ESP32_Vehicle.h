@@ -58,6 +58,11 @@
 #define HUSKYLENS_SCL_PIN         22
 #define HUSKYLENS_X_CENTER        160
 #define HUSKYLENS_Y_HEIGHT        240
+
+
+#define TIMER0_FREQUENCY          100000
+#define TIMER0_PRESCALE           80
+#define TIMER0_COUNT              50000
 //============================================================================
 
 // GLOBAL VARIABLES (Declarations Only) ======================================
@@ -77,12 +82,21 @@ enum VehicleState{
 };
 
 extern VehicleState currentState;
-
+extern int dataLog_num;
 extern BluetoothSerial SerialBT;
 extern HUSKYLENS huskylens;
 extern Adafruit_INA219 ina219;
 
+//extern hw_timer_t* timer;
+//extern portMUX_TYPE timerMux;
+//extern volatile bool timerFlag;
 
+extern hw_timer_t *timer;
+extern volatile SemaphoreHandle_t timerSemaphore;
+extern portMUX_TYPE timerMux;
+
+extern volatile uint32_t isrCounter;
+extern volatile uint32_t lastIsrAt;
 
 // FUNCTION PROTOTYPES =======================================================
 // See ESP32_Vehicle.cpp for headers and details.
@@ -103,6 +117,9 @@ String readGUICommand();
 void parseGUICommand();
 void sendDataLog();      
 HUSKYLENSResult readHUSKYLENS();
+
+void ARDUINO_ISR_ATTR onTimer();
+void init2HzTimer();
 
 
 #endif      // ESP32_VEHICLE_H

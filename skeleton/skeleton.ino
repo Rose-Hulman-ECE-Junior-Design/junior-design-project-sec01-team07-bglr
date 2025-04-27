@@ -19,13 +19,14 @@ void setup() {
   initINA219();
   initSteeringServo();
   initSpeedServo();
+  init2HzTimer();
 
   currentState = IDLE;
+  dataLog_num = 0;
   
   Serial.println("FINISHED WITH SETUP.");
+  SerialBT.println("CONNECT ME MOTHERFUCKER");
 
-
-  //TODO: set up a 2 Hz timer to run sendDataLog() every 0.5 seconds.
 
 }
 
@@ -36,7 +37,33 @@ void loop() {
 
   //check for Bluetooth Input
   parseGUICommand();
-  sendDataLog();
+
+//  if (timerFlag) { // Every 0.5 seconds
+//    portENTER_CRITICAL(&timerMux);
+//    timerFlag = false;
+//    portEXIT_CRITICAL(&timerMux);
+//
+//    Serial.print("Sending data log number "); Serial.println(dataLog_num);
+//    sendDataLog(); //Send the data log
+//  }
+
+  // If Timer has fired
+  if (xSemaphoreTake(timerSemaphore, 0) == pdTRUE) {
+//    uint32_t isrCount = 0, isrTime = 0;
+//    // Read the interrupt count and time
+//    portENTER_CRITICAL(&timerMux);
+//    isrCount = isrCounter;
+//    isrTime = lastIsrAt;
+//    portEXIT_CRITICAL(&timerMux);
+//    // Print it
+//    Serial.print("onTimer no. ");
+//    Serial.print(isrCount);
+//    Serial.print(" at ");
+//    Serial.print(isrTime);
+//    Serial.println(" ms");
+    
+    sendDataLog();
+  }
   
   switch (currentState){
     case IDLE:
@@ -62,7 +89,7 @@ void loop() {
       break;
     }
 
-    delay(500);
+    //delay(500);
 
 
 }

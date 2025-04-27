@@ -11,10 +11,11 @@ import time
 print("Hello CK!")
 
 
-port = 'COM11'
+port = 'COM8'
 data_file = "dataLog_test1.csv"
 
 num_bytes = 21
+baud_rate = 115200
 
 bluetooth_serial = 0
 
@@ -22,7 +23,7 @@ time_step = 0.5
 
 running_time = 0
 
-bluetooth_serial = serial.Serial(port)
+bluetooth_serial = None
 serial_lock = threading.Lock()
 
 
@@ -36,7 +37,7 @@ def parse_dataLog(response):
     current = float(values[0])             # current in mA
     voltage = float(values[1])             # voltage in V
     power = current * voltage              # power in mW
-    #state = float(values[2])               # state enumeration
+    #state = float(values[2])              # state enumeration
 
     
 
@@ -68,24 +69,39 @@ def add_to_csv(filepath, row_data):
 """ Reads power data logs from ESP32"""
 def handle_Rx():
     print("Starting Rx thread.")
+    global bluetooth_serial, serial_lock
+    
     while 1:
+        
         with serial_lock:
             response = bluetooth_serial.read(num_bytes)
+            
+        if response:
+            print("Received data:", response)
+        else:
+            print("No data received")
+            continue
+
+            
         response_str = str(response)[2:]        #strip out the first two characters "b'"
         
-        #print(response_str)
         print('====================')
         
         # parse the response
         parse_dataLog(response_str)
-    
-        #TODO: if connection is ever lost, break
+
+
+        # if the connection is lost, break
+        if not bluetooth_serial.is_open:
+            print("Error: Serial port is not open.")
+            return
     
     
 #=========================================================================================    
 """ Sends user commands to the ESP32"""
 def handle_Tx():
     print("Starting Tx thread.")
+    global bluetooth_serial, serial_lock
     while 1:
         command = input("What would you like to send? ")
         print("Sending:" + command)
@@ -95,7 +111,10 @@ def handle_Tx():
         with serial_lock:
             bluetooth_serial.write(command.encode('utf-8'))
         
-        #TODO: if connection is ever lost, break
+        # if the connection is lost, break
+        if not bluetooth_serial.is_open:
+            print("Error: Serial port is not open.")
+            return
     
 
 #=========================================================================================
@@ -104,6 +123,7 @@ def handle_Tx():
 try:
     #attempt to establish a serial connection
     #bluetooth_serial = serial.Serial(port, baud_rate)
+    bluetooth_serial = serial.Serial(port=port, baudrate=baud_rate, timeout=1)
     print(bluetooth_serial.name)
     print(f"Connected to port {port} at {baud_rate} baud.")
 
@@ -111,12 +131,12 @@ try:
         threads = []
         
         #dispatch threads
-        rx_thread = threading.Thread(target=handle_Rx, args=(bluetooth_serial,) )
+        rx_thread = threading.Thread(target=handle_Rx )
         threads.append(rx_thread)
         
             
-        tx_thread = threading.Thread(target=handle_Tx, args=(bluetooth_serial,))
-        threads.append(tx_thread)
+        #tx_thread = threading.Thread(target=handle_Tx)
+        #threads.append(tx_thread)
 
         rx_thread.start()
         #tx_thread.start()

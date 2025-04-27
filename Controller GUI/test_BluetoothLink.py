@@ -6,15 +6,16 @@ import time
 print("Hello CK!")
 
 
-port = 'COM11'
+port = 'COM12'
 
-baud_rate = 9600
+baud_rate = 115200 
 num_bytes = 48;
 
 
 try:
     #attempt to establish a seiral connection
-    bluetooth_serial = serial.Serial(port, baud_rate)
+    #bluetooth_serial = serial.Serial(port, baud_rate)
+    bluetooth_serial = serial.Serial(port=port, baudrate=baud_rate, timeout=1)
     print(bluetooth_serial.name)
     print(f"Connected to port {port} at {baud_rate} baud.")
 

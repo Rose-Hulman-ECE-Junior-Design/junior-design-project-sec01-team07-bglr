@@ -36,11 +36,23 @@ float loadvoltage = 0;
 float power_mW = 0;
 
 VehicleState currentState = IDLE;
-
+int dataLog_num;
 BluetoothSerial SerialBT;
 HUSKYLENS huskylens;
 Adafruit_INA219 ina219;
 
+//hw_timer_t* timer = NULL;
+//portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
+//volatile bool timerFlag = false;
+
+// Timer Variables ========================
+hw_timer_t *timer = NULL;
+volatile SemaphoreHandle_t timerSemaphore;
+portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
+
+volatile uint32_t isrCounter = 0;
+volatile uint32_t lastIsrAt = 0;
+//==========================================
 
 /* 
  * Initialize the serial monitor.
@@ -114,6 +126,49 @@ void initSpeedServo(){
   uint32_t zeroSpeedPWMCount = 204;
   ledcWrite(SPEED_SERVO, zeroSpeedPWMCount);
 }
+
+
+/*
+ * Timer interrupt service routine 
+ * Will execute every 0.5 seconds
+ * Sets a flag to indicate timer has ticked.
+ */
+void ARDUINO_ISR_ATTR onTimer() {
+  // Increment the counter and set the time of ISR
+  portENTER_CRITICAL_ISR(&timerMux);
+  isrCounter = isrCounter + 1;
+  lastIsrAt = millis();
+  portEXIT_CRITICAL_ISR(&timerMux);
+  // Give a semaphore that we can check in the loop
+  xSemaphoreGiveFromISR(timerSemaphore, NULL);
+  // It is safe to use digitalRead/Write here if you want to toggle an output
+}
+
+
+/*
+ * Initialize the 2 Hz timer
+ * 
+ * Uses Timer 0 at 1 MHz; count-up timer
+ */
+void init2HzTimer(){
+  // Create semaphore to inform us when the timer has fired
+  timerSemaphore = xSemaphoreCreateBinary();
+
+  // Set timer frequency to 1Mhz
+  timer = timerBegin(TIMER0_FREQUENCY);
+
+  // Attach onTimer function to our timer.
+  timerAttachInterrupt(timer, &onTimer);
+
+  // Set alarm to call onTimer function every second (value in microseconds).
+  // Repeat the alarm (third parameter) with unlimited count = 0 (fourth parameter).
+  timerAlarm(timer, TIMER0_COUNT, true, 0);
+
+
+}
+
+
+
 
 /*
  * Set the angle of the steering servo, in degrees.
@@ -320,20 +375,21 @@ void sendDataLog(){
   //update sensor readings
   readINA219();
 
-  char current[FLOAT_BUFF_SIZE], voltage[FLOAT_BUFF_SIZE], power[FLOAT_BUFF_SIZE], state[FLOAT_BUFF_SIZE];
+  char current[FLOAT_BUFF_SIZE], voltage[FLOAT_BUFF_SIZE], state[FLOAT_BUFF_SIZE], num[FLOAT_BUFF_SIZE];
   //convert INA219 values from floats to strings
   dtostrf(current_mA, FLOAT_MIN_WIDTH, NUM_DIGITS_AFTER_DECIMAL, current);           
   dtostrf(loadvoltage, FLOAT_MIN_WIDTH, NUM_DIGITS_AFTER_DECIMAL, voltage);
-  dtostrf(power_mW, FLOAT_MIN_WIDTH, NUM_DIGITS_AFTER_DECIMAL, power);
   dtostrf((float)currentState, FLOAT_MIN_WIDTH, NUM_DIGITS_AFTER_DECIMAL, state);
+  itoa(dataLog_num, num, 10);
+
+  dataLog_num++;
 
   //concatenate serial package of data, do some string manipulation
   char package[FLOAT_BUFF_SIZE*3 + 2]; // Adjust size as needed
   sprintf(package, "%s:%s:%s", current, voltage, state);
 
-  //Serial.println(package);
+  Serial.println(package);
   //Serial.println(sizeof(package));
-  SerialBT.print(package); //
-  //SerialBT.write(package, strlen(package)); //send raw bytes of data through BT Link
+  SerialBT.print(package); 
 
 }      
