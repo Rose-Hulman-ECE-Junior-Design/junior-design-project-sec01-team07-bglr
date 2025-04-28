@@ -20,6 +20,7 @@ void setup() {
   initSteeringServo();
   initSpeedServo();
   init2HzTimer();
+  initCapacitorPin();
 
   currentState = IDLE;
   dataLog_num = 0;

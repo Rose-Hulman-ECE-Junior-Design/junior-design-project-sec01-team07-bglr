@@ -168,6 +168,13 @@ void init2HzTimer(){
 }
 
 
+/*
+ * Initialize power supply capacitor analog pin for reading
+ * the voltage across the capacitors.
+ */
+ void initCapacitorPin(){
+  pinMode(CAP_PIN, INPUT);
+ }
 
 
 /*
@@ -373,20 +380,24 @@ void parseGUICommand(){
 void sendDataLog(){
 
   //update sensor readings
-  readINA219();
+  readINA219();  //read INA219
+  //TODO: read capacitor voltage
+  int cap_voltage = analogRead(CAP_PIN)
 
-  char current[FLOAT_BUFF_SIZE], voltage[FLOAT_BUFF_SIZE], state[FLOAT_BUFF_SIZE], num[FLOAT_BUFF_SIZE];
+  char current[FLOAT_BUFF_SIZE], voltage[FLOAT_BUFF_SIZE], state[FLOAT_BUFF_SIZE], num[FLOAT_BUFF_SIZE], v_cap[FLOAT_BUFF_SIZE];
   //convert INA219 values from floats to strings
   dtostrf(current_mA, FLOAT_MIN_WIDTH, NUM_DIGITS_AFTER_DECIMAL, current);           
   dtostrf(loadvoltage, FLOAT_MIN_WIDTH, NUM_DIGITS_AFTER_DECIMAL, voltage);
+  dtostrf(cap_voltage, FLOAT_MIN_WIDTH, NUM_DIGITS_AFTER_DECIMAL, v_cap);
+  
   dtostrf((float)currentState, FLOAT_MIN_WIDTH, NUM_DIGITS_AFTER_DECIMAL, state);
   itoa(dataLog_num, num, 10);
 
   dataLog_num++;
 
   //concatenate serial package of data, do some string manipulation
-  char package[FLOAT_BUFF_SIZE*3 + 2]; // Adjust size as needed
-  sprintf(package, "%s:%s:%s", current, voltage, state);
+  char package[FLOAT_BUFF_SIZE*4 + 2]; // Adjust size as needed
+  sprintf(package, "%s:%s:%s:%s", current, voltage, state, v_cap);
 
   //Serial.println(package);
   //Serial.println(sizeof(package));

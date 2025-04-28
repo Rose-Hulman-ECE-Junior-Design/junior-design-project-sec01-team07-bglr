@@ -1,13 +1,18 @@
 import sys
 import pandas as pd
 import matplotlib.pyplot as plt
-from PyQt6.QtWidgets import QApplication, QWidget, QLabel, QPushButton, QVBoxLayout, QFileDialog
+from PyQt6.QtWidgets import QApplication, QWidget, QLabel, QPushButton, QVBoxLayout, QFileDialog, QProgressBar, QGridLayout
+from PyQt6.QtCore import Qt, QTimer
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 
 WINDOW_WIDTH = 1000
 WINDOW_HEIGHT = 800
 
 data_file = ""    #filepath to .csv file where data will be stored
+
+V_inst = 7.223
+I_inst = 302
+P_inst = 2181.34
 
 # ===================================================================================================================
 class LogViewer(QWidget):
@@ -67,16 +72,57 @@ class RunViewer(QWidget):
         self.start_button = QPushButton("Start")
         self.stop_button = QPushButton("Stop")
         
+        # Set up the timer to call update_progress_bars every 100ms
+        timer = QTimer()
+        timer.timeout.connect(lambda: self.update_progress_bars(self))  # Connect the update function
+        timer.start(100)  # Call every 100ms
+        
+        # Voltage label and progress bar
+        self.voltage_label = QLabel("Voltage (V)" + str(V_inst), self)
+        self.current_label = QLabel("Current (mA)" + str(I_inst), self)
+        self.power_label = QLabel("Power (mW)" + str(P_inst), self)
+        
+        self.voltage_progress = QProgressBar(self)
+        self.voltage_progress.setRange(0, 12)  # Progress bar from 0 to 100%
+        self.voltage_progress.setTextVisible(True)  # Show percentage
+        
+        self.current_progress = QProgressBar(self)
+        self.current_progress.setRange(0, 2000)  # Progress bar from 0 to 100%
+        self.current_progress.setTextVisible(True)  # Show percentage
+        
+        self.power_progress = QProgressBar(self)
+        self.power_progress.setRange(0, 2000)  # Progress bar from 0 to 100%
+        self.power_progress.setTextVisible(True)  # Show percentage
+        
+        
         self.start_button.clicked.connect(send_START)
         self.stop_button.clicked.connect(send_STOP)
 
-        layout = QVBoxLayout()
-        label = QLabel("This is the run viewer!")
-        layout.addWidget(label)
+        layout = QGridLayout()
+        label = QLabel("Insert RunViewer Instructions Here.")
+        layout.addWidget(label, 0, 0)
+        
+        layout.addWidget(self.voltage_label)
+        layout.addWidget(self.current_label)
+        layout.addWidget(self.power_label)
+        
+        layout.addWidget(self.voltage_progress)
+        layout.addWidget(self.current_progress)
+        layout.addWidget(self.power_progress)
+        
         layout.addWidget(self.start_button)
         layout.addWidget(self.stop_button)
         self.setLayout(layout)
         
+    def update_progress_bars(self):
+    # Update the progress bars and labels based on the latest voltage and current
+        self.voltage_label.setText("Voltage (V)" + str(V_inst))
+        self.current_label.setText("Current (mA)" + str(I_inst))
+        self.power_label.setText("Power (mW)" + str(P_inst))
+        
+        self.voltage_progress.setValue(int((V_inst / 15.0) * 100))  # Set voltage as percentage (max 15V)
+        self.current_progress.setValue(int((I_inst / 500) * 100))  # Set current as percentage (max 5A)
+        self.power_progress.setValue(int((P_inst / 5000) * 100))
 
 
 # ======================================================================================

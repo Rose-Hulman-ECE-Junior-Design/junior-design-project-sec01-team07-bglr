@@ -63,6 +63,10 @@
 #define TIMER0_FREQUENCY          100000
 #define TIMER0_PRESCALE           80
 #define TIMER0_COUNT              50000
+
+
+#define CAP_PIN                   9
+#define CAP_VOLTAGE_SCALING       10
 //============================================================================
 
 // GLOBAL VARIABLES (Declarations Only) ======================================
@@ -73,7 +77,7 @@ extern float shuntvoltage;
 extern float busvoltage; 
 extern float current_mA; 
 extern float loadvoltage; 
-extern float power_mW; 
+extern float power_mW;
 
 enum VehicleState{ 
   IDLE, 
@@ -87,9 +91,6 @@ extern BluetoothSerial SerialBT;
 extern HUSKYLENS huskylens;
 extern Adafruit_INA219 ina219;
 
-//extern hw_timer_t* timer;
-//extern portMUX_TYPE timerMux;
-//extern volatile bool timerFlag;
 
 extern hw_timer_t *timer;
 extern volatile SemaphoreHandle_t timerSemaphore;
@@ -106,6 +107,7 @@ void initINA219();
 void initHUSKYLENS();
 void initSteeringServo();
 void initSpeedServo();
+void initCapacitorPin();
 
 void setSteeringAngle(float angle);
 void setServoSpeed(float duty);
