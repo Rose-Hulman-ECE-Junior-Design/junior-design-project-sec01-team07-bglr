@@ -26,6 +26,8 @@ running_time = 0
 bluetooth_serial = None
 serial_lock = threading.Lock()
 
+add_to_log = true;
+
 
 #=========================================================================================
 """ Separate the numbers out from the response string"""
@@ -37,7 +39,7 @@ def parse_dataLog(response):
     current = float(values[0])             # current in mA
     voltage = float(values[1])             # voltage in V
     power = current * voltage              # power in mW
-    #state = float(values[2])              # state enumeration
+    state = float(values[2])              # state enumeration
 
     
 
@@ -51,9 +53,10 @@ def parse_dataLog(response):
     print("Power (mW): " + str(power))
     print("Energy (J):" + str(energy))
 
-    log = [running_time, voltage, current, power, energy]
-    
-    add_to_csv(data_file, log)
+    log = [running_time, voltage, current, power, energy, state]
+
+    if add_to_log:
+        add_to_csv(data_file, log)
     
     running_time += time_step
 
@@ -84,7 +87,7 @@ def handle_Rx():
 
             
         response_str = str(response)[2:]        #strip out the first two characters "b'"
-        
+        response_str = response_str[:-1]        #strip out the last character too "'"
         print('====================')
         
         # parse the response

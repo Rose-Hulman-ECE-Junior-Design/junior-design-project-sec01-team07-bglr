@@ -23,6 +23,7 @@ void setup() {
 void loop() {
   // Receive data from the laptop via Bluetooth
   if (SerialBT.available()) {
+    Serial.println("Reading data...");
     String incoming = SerialBT.readStringUntil('\n');
     Serial.println("Received via BT: " + incoming);
     // Optional: Echo back to laptop
@@ -31,6 +32,7 @@ void loop() {
 
   // Send data from Serial Monitor to Bluetooth
   if (Serial.available()) {
+    Serial.println("Sending data...");
     SerialBT.write(Serial.read());
   }
 

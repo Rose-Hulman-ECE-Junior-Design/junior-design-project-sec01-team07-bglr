@@ -388,7 +388,7 @@ void sendDataLog(){
   char package[FLOAT_BUFF_SIZE*3 + 2]; // Adjust size as needed
   sprintf(package, "%s:%s:%s", current, voltage, state);
 
-  Serial.println(package);
+  //Serial.println(package);
   //Serial.println(sizeof(package));
   SerialBT.print(package); 
 
