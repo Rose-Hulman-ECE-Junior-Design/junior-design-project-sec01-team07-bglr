@@ -38,28 +38,26 @@ def parse_dataLog(response):
     voltage = float(values[1])             # voltage in V
     power = current * voltage              # power in mW
     state = float(values[2])              # state enumeration
-    energy = float(values[3])
+    v_cap = float(values[3])
     log_num = int(values[4])
 
-    
+    # TODO: Scale v_cap back to its normal value
 
-    energy = power * time_step
+    energy = v_cap * v_cap * 1000 / 2  # turn power supply voltage to energy
 
-    global running_time
 
-    print("TIME (s): " + str(log_num))
+    print("TIME (s): " + str(log_num *0.5))
     print("Current (mA): " + str(current))
     print("Voltage (V): " + str(voltage))
     print("Power (mW): " + str(power))
     print("Energy (J):" + str(energy))
 
-    log = [log_num * 0.5, voltage, current, power, energy, state]
-    #      time (seconds), Voltage, Current, Power, Energy, State
+    log = [log_num, voltage, current, power, energy, state]
+    #      packet num, Voltage, Current, Power, Energy, State
 
     if add_to_log:
         add_to_csv(data_file, log)
     
-    running_time += time_step
 
 
 def add_to_csv(filepath, row_data):
