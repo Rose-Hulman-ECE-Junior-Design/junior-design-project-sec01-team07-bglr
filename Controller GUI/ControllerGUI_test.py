@@ -1,7 +1,8 @@
 import sys
+import csv
 import pandas as pd
 import matplotlib.pyplot as plt
-from PyQt6.QtWidgets import QApplication, QWidget, QLabel, QPushButton, QVBoxLayout, QFileDialog, QProgressBar, QGridLayout
+from PyQt6.QtWidgets import QApplication, QWidget, QLabel, QPushButton, QLineEdit, QVBoxLayout, QFileDialog, QProgressBar, QGridLayout
 from PyQt6.QtCore import Qt, QTimer
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 
@@ -193,32 +194,66 @@ class MainWindow(QWidget):
 
         self.begin_button = QPushButton("Begin Run")
         self.logviewer_window_button = QPushButton("Open Power Log Viewer")
-
+        
+        big_buttons = [self.begin_button, self.logviewer_window_button]
+        for i in big_buttons:
+            i.setMinimumSize(300, 200)
+            
+        self.browse_button = QPushButton("Browse...")
+        self.path_input = QLineEdit()
+        
         # Connect buttons to functions
         self.begin_button.clicked.connect(self.begin_run)
         self.logviewer_window_button.clicked.connect(self.open_logviewer_window)
+        self.browse_button.clicked.connect(self.select_file)
         
-        buttons = [self.begin_button, self.logviewer_window_button] 
+        buttons = [self.begin_button, self.logviewer_window_button, self.browse_button] 
+        
         for i in buttons:
             i.setMinimumSize(80, 200)
 
-        layout = QVBoxLayout()
+        layout = QGridLayout()
         # Add the buttons to the window
-        layout.addWidget(self.begin_button)
-        layout.addWidget(self.logviewer_window_button)
+        layout.addWidget(self.begin_button, 0, 0, 1, 4)
+        layout.addWidget(self.logviewer_window_button, 1, 0, 1, 4)
+        layout.addWidget(self.browse_button, 2, 0, 1, 1)
+        layout.addWidget(self.path_input, 2, 1, 1, 3)
 
         self.setLayout(layout)
 
-    def begin_run(self):
-        print("Starting a new run.")
-        #open the run window
-        self.runviewer_window = RunViewer()
-        self.runviewer_window.show()
-
-    
+    # Open a new Log Viewer Window to allow user to see a data log
     def open_logviewer_window(self):
         self.logviewer_window = LogViewer()
         self.logviewer_window.show()
+    
+    # Select a file from the file explorer
+    # allows user to determine where they want to store their data log
+    def select_file(self):
+        file_path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Create or Select CSV File",
+            filter="CSV Files (*.csv)"
+        )
+        if file_path:
+            if not file_path.lower().endswith(".csv"):
+                file_path += ".csv"
+            self.path_input.setText(file_path)
+    
+    # Begins a new run, brings up a new Run Viewer Window
+    # Called when user presses "Begin New Run" button
+    def begin_run(self):
+        print("Starting a new run.")
+        
+        global add_to_log, data_file
+        data_file = self.path_input.text()
+        
+        initialize_csv(data_file)
+        add_to_log = True
+        
+        
+        #open the run window
+        self.runviewer_window = RunViewer()
+        self.runviewer_window.show()
         
 # ===============================================================================
 
@@ -235,7 +270,11 @@ def update_K():
     #TODO: implement
 
 
-        
+def initialize_csv(filepath):
+    with open(filepath, mode="w", newline="") as file:
+        writer = csv.writer(file)
+        writer.writerow(["Log Number", "Voltage (V)", "Current (mA)", "Power (mW)", "Energy (J)", "State"])
+             
 # ==============================================================================
 
 # TODO: establish BT connection

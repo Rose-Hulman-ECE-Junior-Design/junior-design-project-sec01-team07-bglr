@@ -75,20 +75,18 @@ def handle_Rx():
     
     while 1:
         
+        print("Reading data...")
         with serial_lock:
             response = bluetooth_serial.read(num_bytes)
             # response = bluetooth_serial.readline()
-            
-        if response:
-            print("Received data: ", response)
-        else:
+        
+        if not response:
             print("No data received")
             continue
-
-            
+                 
         response_str = str(response)[2:]        #strip out the first two characters "b'"
         response_str = response_str[:-1]        #strip out the last character too "'"
-        print('====================')
+        #print('====================')
         
         # parse the response
         parse_dataLog(response_str)
@@ -138,11 +136,11 @@ try:
         threads.append(rx_thread)
         
             
-        #tx_thread = threading.Thread(target=handle_Tx)
-        #threads.append(tx_thread)
+        tx_thread = threading.Thread(target=handle_Tx)
+        threads.append(tx_thread)
 
         rx_thread.start()
-        #tx_thread.start()
+        tx_thread.start()
             
 
         for t in threads:

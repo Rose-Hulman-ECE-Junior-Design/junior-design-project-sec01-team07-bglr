@@ -55,8 +55,8 @@
 #define BT_BUFFER_SIZE            255
 
 #define NUM_DIGITS_AFTER_DECIMAL  3
-#define FLOAT_MIN_WIDTH           6
-#define FLOAT_BUFF_SIZE           8
+#define FLOAT_MIN_WIDTH           9
+#define FLOAT_BUFF_SIZE           10
 #define PACKAGE_SIZE              80
 #define RAD_TO_DEG                57.29577951308232
 
@@ -87,6 +87,8 @@ extern float busvoltage;
 extern float current_mA; 
 extern float loadvoltage; 
 extern float power_mW;
+
+extern int current_speed;
 
 enum VehicleState{ 
   IDLE, 
@@ -126,6 +128,7 @@ float calculateServoSpeed();
 void readINA219();       
 String readGUICommand();  
 void parseGUICommand();
+void floatToZeroPaddedStr(float val, int width, int precision, char* out);
 void sendDataLog();      
 HUSKYLENSResult readHUSKYLENS();
 

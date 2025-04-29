@@ -39,49 +39,27 @@ void loop() {
   //check for Bluetooth Input
   parseGUICommand();
 
-//  if (timerFlag) { // Every 0.5 seconds
-//    portENTER_CRITICAL(&timerMux);
-//    timerFlag = false;
-//    portEXIT_CRITICAL(&timerMux);
-//
-//    Serial.print("Sending data log number "); Serial.println(dataLog_num);
-//    sendDataLog(); //Send the data log
-//  }
-
   // If Timer has fired
-  if (xSemaphoreTake(timerSemaphore, 0) == pdTRUE) {
-//    uint32_t isrCount = 0, isrTime = 0;
-//    // Read the interrupt count and time
-//    portENTER_CRITICAL(&timerMux);
-//    isrCount = isrCounter;
-//    isrTime = lastIsrAt;
-//    portEXIT_CRITICAL(&timerMux);
-//    // Print it
-//    Serial.print("onTimer no. ");
-//    Serial.print(isrCount);
-//    Serial.print(" at ");
-//    Serial.print(isrTime);
-//    Serial.println(" ms");
-    
+  if (xSemaphoreTake(timerSemaphore, 0) == pdTRUE) {    
     sendDataLog();
   }
+
+
   
   switch (currentState){
     case IDLE:
-      //turn off the 
+      //turn off the motors
       ledcWrite(SPEED_SERVO, 0);
       break;
       
     case DRIVING:
-      
       steeringAngle = calculateSteeringAngle();
       setSteeringAngle(STEERING_CENTER + steeringAngle);
-      ledcWrite(SPEED_SERVO, 250);
-      //stuff
+      ledcWrite(SPEED_SERVO, current_speed);
       break;
       
     case RECHARGING:
-      //stuff
+      //enter sleeping state to save power
       break;
       
     default:
@@ -89,8 +67,5 @@ void loop() {
       //more stuff
       break;
     }
-
-    //delay(500);
-
 
 }

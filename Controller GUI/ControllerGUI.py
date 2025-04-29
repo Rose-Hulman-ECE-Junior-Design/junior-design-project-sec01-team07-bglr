@@ -5,7 +5,7 @@ import time
 import threading
 import pandas as pd
 import matplotlib.pyplot as plt
-from PyQt6.QtWidgets import QApplication, QWidget, QLabel, QPushButton, QVBoxLayout, QFileDialog, QProgressBar, QGridLayout
+from PyQt6.QtWidgets import QApplication, QWidget, QLabel, QPushButton, QLineEdit, QVBoxLayout, QFileDialog, QProgressBar, QGridLayout
 from PyQt6.QtCore import Qt, QTimer
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 
@@ -24,15 +24,23 @@ S_inst = "DRIVING"
 E_inst = 200
 countdown = 90.0
 timerDone = False
+log_num = 0
+
+state_map = {
+    "0": "IDLE",
+    "1": "DRIVING",
+    "2": "CHARGING",
+    "3": "COMPLETE"
+}
 
 
 # BLUETOOTH VARIABLES ================================================================================================
 port = 'COM8'
-num_bytes = 21
+num_bytes = 39
 baud_rate = 115200
 bluetooth_serial = None
 serial_lock = threading.Lock()
-add_to_log = True
+add_to_log = False
 time_step = 0.5
 running_time = 0
 
@@ -112,7 +120,7 @@ class RunViewer(QWidget):
         # Labels
         self.voltage_label = QLabel("Voltage: " + str(V_inst) + " V", self)
         self.current_label = QLabel("Current: " + str(I_inst) + " mA", self)
-        self.power_label = QLabel("Power: " + str(P_inst) + " mW", self)
+        self.power_label = QLabel("Power: " + str(P_inst)[:7] + " mW", self)
         self.energy_label = QLabel("Energy: " + str(E_inst) + " J", self)
         
         self.state_label = QLabel(S_inst)
@@ -132,8 +140,8 @@ class RunViewer(QWidget):
         p_bars = [self.voltage_progress, self.current_progress, self.power_progress, self.energy_progress]
         for i in p_bars:
             # Set the style sheet to change the chunk color
-            self.voltage_progress.setRange(0, 100)     # Progress bar from 0 to 100%
-            self.voltage_progress.setTextVisible(True) # Show percentage
+            i.setRange(0, 100)     # Progress bar from 0 to 100%
+            i.setTextVisible(True) # Show percentage
             i.setStyleSheet("""
                     QProgressBar {
                         border: 2px solid grey;
@@ -186,7 +194,7 @@ class RunViewer(QWidget):
          
         self.voltage_label.setText("Voltage: " + str(V_inst) + " V")
         self.current_label.setText("Current: " + str(I_inst) + " mA")
-        self.power_label.setText("Power: " + str(P_inst) + " mW")
+        self.power_label.setText("Power: " + str(P_inst)[:7] + " mW")
         self.energy_label.setText("Energy: " + str(E_inst) + " J")
         self.state_label.setText(S_inst)
         self.time_label.setText("Time Remaining: " + "{:.2f}".format(countdown))
@@ -198,6 +206,7 @@ class RunViewer(QWidget):
         
         countdown =  countdown - 0.2  #timer tick
         
+        global timerDone
         if countdown <= 0:
             timerDone = True
 
@@ -213,32 +222,66 @@ class MainWindow(QWidget):
 
         self.begin_button = QPushButton("Begin Run")
         self.logviewer_window_button = QPushButton("Open Power Log Viewer")
-
+        
+        big_buttons = [self.begin_button, self.logviewer_window_button]
+        for i in big_buttons:
+            i.setMinimumSize(300, 200)
+            
+        self.browse_button = QPushButton("Browse...")
+        self.path_input = QLineEdit()
+        
         # Connect buttons to functions
         self.begin_button.clicked.connect(self.begin_run)
         self.logviewer_window_button.clicked.connect(self.open_logviewer_window)
+        self.browse_button.clicked.connect(self.select_file)
         
-        buttons = [self.begin_button, self.logviewer_window_button] 
+        buttons = [self.begin_button, self.logviewer_window_button, self.browse_button] 
+        
         for i in buttons:
             i.setMinimumSize(80, 200)
 
-        layout = QVBoxLayout()
+        layout = QGridLayout()
         # Add the buttons to the window
-        layout.addWidget(self.begin_button)
-        layout.addWidget(self.logviewer_window_button)
+        layout.addWidget(self.begin_button, 0, 0, 1, 4)
+        layout.addWidget(self.logviewer_window_button, 1, 0, 1, 4)
+        layout.addWidget(self.browse_button, 2, 0, 1, 1)
+        layout.addWidget(self.path_input, 2, 1, 1, 3)
 
         self.setLayout(layout)
 
-    def begin_run(self):
-        print("Starting a new run.")
-        #open the run window
-        self.runviewer_window = RunViewer()
-        self.runviewer_window.show()
-
-    
+    # Open a new Log Viewer Window to allow user to see a data log
     def open_logviewer_window(self):
         self.logviewer_window = LogViewer()
         self.logviewer_window.show()
+    
+    # Select a file from the file explorer
+    # allows user to determine where they want to store their data log
+    def select_file(self):
+        file_path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Create or Select CSV File",
+            filter="CSV Files (*.csv)"
+        )
+        if file_path:
+            if not file_path.lower().endswith(".csv"):
+                file_path += ".csv"
+            self.path_input.setText(file_path)
+    
+    # Begins a new run, brings up a new Run Viewer Window
+    # Called when user presses "Begin New Run" button
+    def begin_run(self):
+        print("Starting a new run.")
+        
+        global add_to_log, data_file
+        data_file = self.path_input.text()
+        
+        initialize_csv(data_file)
+        add_to_log = True           # only start writing data to log file when we have started a run
+        
+        
+        #open the run window
+        self.runviewer_window = RunViewer()
+        self.runviewer_window.show()
         
 # ==================================================================================================================
 # GUI FUNCTIONS ====================================================================================================
@@ -256,6 +299,8 @@ def update_speed():
     send_message("S1")
 
 def send_message(command):
+    global bluetooth_serial, serial_lock
+    
     with serial_lock:
         bluetooth_serial.write(command.encode('utf-8'))
         
@@ -267,36 +312,44 @@ def send_message(command):
         
 # ==============================================================================
 #=========================================================================================
+
+def initialize_csv(filepath):
+    with open(filepath, mode="w", newline="") as file:
+        writer = csv.writer(file)
+        writer.writerow(["Log Number", "Voltage (V)", "Current (mA)", "Power (mW)", "Energy (J)", "State"])
+        
+        
 """ Separate the numbers out from the response string"""
 """ Separate the numbers out from the response string"""
 def parse_dataLog(response):
     values = response.split(":")
 
-    #print(values)
+    global I_inst, V_inst, P_inst, S_inst, E_inst, add_to_log, log_num, state_map
     
-    current = float(values[0])             # current in mA
-    voltage = float(values[1])             # voltage in V
-    power = current * voltage              # power in mW
-    state = float(values[2])              # state enumeration
+    I_inst = float(values[0])             # current in mA
+    V_inst = float(values[1])             # voltage in V
+    P_inst = I_inst * V_inst              # power in mW
+    S_inst = state_map.get(values[2].strip(), "UNKNOWN")          # state enumeration
     v_cap = float(values[3])
-    log_num = int(values[4])
 
     # TODO: Scale v_cap back to its normal value
 
-    energy = v_cap * v_cap * 1000 / 2  # turn power supply voltage to energy
+    E_inst = v_cap * v_cap * 1000 / 2  # turn power supply voltage to energy
 
 
     print("TIME (s): " + str(log_num *0.5))
-    print("Current (mA): " + str(current))
-    print("Voltage (V): " + str(voltage))
-    print("Power (mW): " + str(power))
-    print("Energy (J):" + str(energy))
+    print("Current (mA): " + str(I_inst))
+    print("Voltage (V): " + str(V_inst))
+    print("Power (mW): " + str(P_inst)[:7])
+    print("Energy (J):" + str(E_inst))
 
-    log = [log_num, voltage, current, power, energy, state]
-    #      packet num, Voltage, Current, Power, Energy, State
+
 
     if add_to_log:
+        log = [log_num, V_inst, I_inst, P_inst, E_inst, S_inst]
+        #     packet num, Voltage, Current, Power, Energy, State
         add_to_csv(data_file, log)
+        log_num = log_num + 1
     
 
 """ Append row of collected data to .csv file"""
@@ -312,7 +365,7 @@ def handle_Rx():
     global bluetooth_serial, serial_lock
     
     while 1:
-        
+        print("Reading data...")
         with serial_lock:
             response = bluetooth_serial.read(num_bytes)
             # response = bluetooth_serial.readline()
@@ -340,6 +393,7 @@ def handle_Rx():
         
 
 def start_Rx_thread():
+    print("Attempting to start Rx thread")
     rx_thread = threading.Thread(target=handle_Rx, daemon=True) #run in the background
     rx_thread.start()
     
@@ -353,17 +407,18 @@ try:
     bluetooth_serial = serial.Serial(port=port, baudrate=baud_rate, timeout=1)
     print(bluetooth_serial.name)
     print(f"Connected to port {port} at {baud_rate} baud.")
+    
+    # If Bluetooth Connection is properly established, start Rx thread and run the GUI
+    start_Rx_thread()
+    
+    app = QApplication([])
+    window = MainWindow()
+    window.show()
+    sys.exit(app.exec())
+    print("Set up the GUI")
+        
 
-    if __name__ == "__main__":
-        
-        # If Bluetooth Connection is properly established, run the GUI
-        app = QApplication([])
-        window = MainWindow()
-        window.show()
-        sys.exit(app.exec())
-        
-        
-        start_Rx_thread()
+
         
 except serial.SerialException as e:
     print(f"Error: {e}")

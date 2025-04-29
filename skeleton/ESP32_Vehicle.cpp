@@ -35,6 +35,8 @@ float current_mA = 0;
 float loadvoltage = 0;
 float power_mW = 0;
 
+extern int current_speed = SPEED_1;
+
 VehicleState currentState = IDLE;
 int dataLog_num;
 BluetoothSerial SerialBT;
@@ -364,12 +366,39 @@ void parseGUICommand(){
     currentState = RECHARGING;
     Serial.println("Vehicle is now in RECHARGING state.");
     
+   } else if (command.equals("S1")){
+     current_speed = SPEED_1;
+    
+   }else if (command.equals("S2")){
+     current_speed = SPEED_2;
+    
+   }else if (command.equals("S3")){
+     current_speed = SPEED_3;
+    
+   }else if (command.equals("S4")){
+    current_speed = SPEED_4;
+    
+   }else if (command.equals("S5")){
+    current_speed = SPEED_5;
+    
+   }else if (command.equals("S6")){
+    current_speed = SPEED_6;
+    
+   }else if (command.equals("XX")){
+    Serial.println("Command entered was XX.");
+    
    }else {
     //Serial.println("Command could not be parsed."); 
    }
    
 }
 
+void floatToZeroPaddedStr(float val, int width, int precision, char* out) {
+  dtostrf(val, width, precision, out);
+  for (int i = 0; out[i] == ' '; i++) {
+    out[i] = '0';
+  }
+}
 
 /*
  * Send data log to the GUI via Bluetooth link.
@@ -385,22 +414,23 @@ void sendDataLog(){
   int cap_voltage_read = analogRead(CAP_PIN);               // 1024 max
   float cap_voltage = ( cap_voltage_read / ADC_RESOLUTION ) * ADC_MAX_VOLTAGE;
 
-  char current[FLOAT_BUFF_SIZE], voltage[FLOAT_BUFF_SIZE], state[FLOAT_BUFF_SIZE], num[FLOAT_BUFF_SIZE], v_cap[FLOAT_BUFF_SIZE];
-  //convert INA219 values from floats to strings
-  dtostrf(current_mA, FLOAT_MIN_WIDTH, NUM_DIGITS_AFTER_DECIMAL, current);           
-  dtostrf(loadvoltage, FLOAT_MIN_WIDTH, NUM_DIGITS_AFTER_DECIMAL, voltage);
-  dtostrf(cap_voltage, FLOAT_MIN_WIDTH, NUM_DIGITS_AFTER_DECIMAL, v_cap);
+  char current[FLOAT_BUFF_SIZE], voltage[FLOAT_BUFF_SIZE], state[FLOAT_BUFF_SIZE], v_cap[FLOAT_BUFF_SIZE];
+  //convert INA219 values from floats to strings - ZERO PADDED SO THEY ARE ALWAYS THE SAME LENGTH!!!
+  floatToZeroPaddedStr(current_mA, FLOAT_MIN_WIDTH, NUM_DIGITS_AFTER_DECIMAL, current);
+  floatToZeroPaddedStr(loadvoltage, FLOAT_MIN_WIDTH, NUM_DIGITS_AFTER_DECIMAL, voltage);
+  floatToZeroPaddedStr(cap_voltage, FLOAT_MIN_WIDTH, NUM_DIGITS_AFTER_DECIMAL, v_cap);
+  floatToZeroPaddedStr((float)currentState, FLOAT_MIN_WIDTH, NUM_DIGITS_AFTER_DECIMAL, state);
   
-  dtostrf((float)currentState, FLOAT_MIN_WIDTH, NUM_DIGITS_AFTER_DECIMAL, state);
-  itoa(dataLog_num, num, 10);
-  dataLog_num++;
+//  dtostrf(current_mA, FLOAT_MIN_WIDTH, NUM_DIGITS_AFTER_DECIMAL, current);           
+//  dtostrf(loadvoltage, FLOAT_MIN_WIDTH, NUM_DIGITS_AFTER_DECIMAL, voltage);
+//  dtostrf(cap_voltage, FLOAT_MIN_WIDTH, NUM_DIGITS_AFTER_DECIMAL, v_cap);
 
   //concatenate serial package of data, do some string manipulation
-  char package[FLOAT_BUFF_SIZE*5 + 2]; // Adjust size as needed
-  sprintf(package, "%s:%s:%s:%s:%s", current, voltage, state, v_cap, num);
+  char package[FLOAT_BUFF_SIZE*4 + 2]; // Adjust size as needed
+  sprintf(package, "%s:%s:%s:%s", current, voltage, state, v_cap);
 
   Serial.println(package);
   Serial.println(sizeof(package));
-  SerialBT.println(package); 
+  SerialBT.print(package); 
 
 }      
