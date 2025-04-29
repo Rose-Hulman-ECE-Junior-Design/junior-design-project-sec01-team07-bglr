@@ -26,7 +26,7 @@ void setup() {
   dataLog_num = 0;
   
   Serial.println("FINISHED WITH SETUP.");
-  SerialBT.println("CONNECT ME MOTHERFUCKER");
+  SerialBT.println("CONECTAME HDTPM");
 
 
 }
@@ -44,8 +44,6 @@ void loop() {
     sendDataLog();
   }
 
-
-  
   switch (currentState){
     case IDLE:
       //turn off the motors
