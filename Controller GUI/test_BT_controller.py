@@ -12,21 +12,19 @@ print("Hello CK!")
 
 
 port = 'COM8'
-data_file = "dataLog_test1.csv"
+data_file = "temp.csv"
 
-num_bytes = 21
+num_bytes = 32
 baud_rate = 115200
-
-bluetooth_serial = 0
-
-time_step = 0.5
-
-running_time = 0
-
 bluetooth_serial = None
 serial_lock = threading.Lock()
-
 add_to_log = True
+
+
+time_step = 0.5
+running_time = 0
+
+
 
 
 #=========================================================================================
@@ -40,6 +38,8 @@ def parse_dataLog(response):
     voltage = float(values[1])             # voltage in V
     power = current * voltage              # power in mW
     state = float(values[2])              # state enumeration
+    energy = float(values[3])
+    log_num = int(values[4])
 
     
 
@@ -47,13 +47,14 @@ def parse_dataLog(response):
 
     global running_time
 
-    print("TIME (s): " + str(running_time))
+    print("TIME (s): " + str(log_num))
     print("Current (mA): " + str(current))
     print("Voltage (V): " + str(voltage))
     print("Power (mW): " + str(power))
     print("Energy (J):" + str(energy))
 
-    log = [running_time, voltage, current, power, energy, state]
+    log = [log_num * 0.5, voltage, current, power, energy, state]
+    #      time (seconds), Voltage, Current, Power, Energy, State
 
     if add_to_log:
         add_to_csv(data_file, log)
@@ -78,9 +79,10 @@ def handle_Rx():
         
         with serial_lock:
             response = bluetooth_serial.read(num_bytes)
+            # response = bluetooth_serial.readline()
             
         if response:
-            print("Received data:", response)
+            print("Received data: ", response)
         else:
             print("No data received")
             continue

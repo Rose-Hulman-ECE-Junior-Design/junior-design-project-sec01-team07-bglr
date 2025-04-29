@@ -44,6 +44,13 @@
 #define SPEED_MIN_DUTY            350 
 #define SPEED_MAX_INC             65
 
+#define SPEED_1                   240           // low speed (duty cycle)
+#define SPEED_2                   260
+#define SPEED_3                   280           // medium speed
+#define SPEED_4                   300
+#define SPEED_5                   320           
+#define SPEED_6                   350           // high speed (duty cycle)
+
 #define THETA_TARGET              0.0
 #define BT_BUFFER_SIZE            255
 
@@ -65,8 +72,10 @@
 #define TIMER0_COUNT              50000
 
 
-#define CAP_PIN                   9
+#define CAP_PIN                   36
 #define CAP_VOLTAGE_SCALING       10
+#define ADC_RESOLUTION            1024
+#define ADC_MAX_VOLTAGE           3.3
 //============================================================================
 
 // GLOBAL VARIABLES (Declarations Only) ======================================
