@@ -22,12 +22,10 @@ void setup() {
   init2HzTimer();
   initCapacitorPin();
 
-  currentState = IDLE;
+  currentState = IDLE;      //initial startup state
   dataLog_num = 0;
   
   Serial.println("FINISHED WITH SETUP.");
-  SerialBT.println("CONECTAME HDTPM");
-
 
 }
 
@@ -53,7 +51,7 @@ void loop() {
     case DRIVING:
       steeringAngle = calculateSteeringAngle();
       setSteeringAngle(STEERING_CENTER + steeringAngle);
-      ledcWrite(SPEED_SERVO, current_speed);
+      setServoSpeed(current_speed);
       break;
       
     case RECHARGING:

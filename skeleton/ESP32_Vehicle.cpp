@@ -35,17 +35,13 @@ float current_mA = 0;
 float loadvoltage = 0;
 float power_mW = 0;
 
-extern int current_speed = SPEED_1;
+extern int current_speed = SPEED_2;
 
 VehicleState currentState = IDLE;
 int dataLog_num;
 BluetoothSerial SerialBT;
 HUSKYLENS huskylens;
 Adafruit_INA219 ina219;
-
-//hw_timer_t* timer = NULL;
-//portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
-//volatile bool timerFlag = false;
 
 // Timer Variables ========================
 hw_timer_t *timer = NULL;
@@ -188,9 +184,9 @@ void init2HzTimer(){
  */
 void setSteeringAngle(float angle){
 
-  //if ( angle > STEERING_MAX_ANGLE || angle < STEERING_MIN_ANGLE ) {
-  //  return;
-  //}
+  if ( angle > STEERING_MAX_ANGLE || angle < STEERING_MIN_ANGLE ) {
+    return;
+  }
   
   float pw = STEERING_MIN_PW + ( (angle/180.0) * STEERING_RANGE);
   uint32_t duty = (uint32_t) (MAX_COUNT * (pw / SERVO_PERIOD));
@@ -205,17 +201,10 @@ void setSteeringAngle(float angle){
  * Inputs - angle, as a float
  * Outputs - none
  * 
- * TODO: Change this to a % input, or directly from duty cycle
+ * Speed will only be ever set to one of 6 known duty cycles
  */
-void setServoSpeed(float angle){
-
-  float pw = SPEED_MIN_PW + ( (angle/180.0) * SPEED_RANGE);   //pulse width, in ms
-  uint32_t duty = (uint32_t) (MAX_COUNT * (pw / SERVO_PERIOD));
-  //Serial.print("Speed servo set to duty "); Serial.println(duty); 
-
+void setServoSpeed(uint32_t duty){
   ledcWrite(SPEED_SERVO, duty);
-
-  //TODO: add limit checks for the duty cycle
 }
 
 /*
@@ -427,10 +416,9 @@ void sendDataLog(){
 
   //concatenate serial package of data, do some string manipulation
   char package[FLOAT_BUFF_SIZE*4 + 2]; // Adjust size as needed
-  sprintf(package, "%s:%s:%s:%s", current, voltage, state, v_cap);
+  sprintf(package, "%s:%s:%s:%s\n", current, voltage, state, v_cap);
 
-  Serial.println(package);
-  Serial.println(sizeof(package));
+  //Serial.println(package);
   SerialBT.print(package); 
 
 }      

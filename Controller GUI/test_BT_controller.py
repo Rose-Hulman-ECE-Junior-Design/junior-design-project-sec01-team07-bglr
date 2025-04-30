@@ -11,7 +11,7 @@ import time
 print("Hello CK!")
 
 
-port = 'COM8'
+port = 'COM3'
 data_file = "temp.csv"
 
 num_bytes = 32
@@ -136,11 +136,11 @@ try:
         threads.append(rx_thread)
         
             
-        tx_thread = threading.Thread(target=handle_Tx)
-        threads.append(tx_thread)
+        #tx_thread = threading.Thread(target=handle_Tx)
+        #threads.append(tx_thread)
 
         rx_thread.start()
-        tx_thread.start()
+        #tx_thread.start()
             
 
         for t in threads:

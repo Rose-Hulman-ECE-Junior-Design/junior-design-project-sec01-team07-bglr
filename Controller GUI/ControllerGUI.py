@@ -35,7 +35,7 @@ state_map = {
 
 
 # BLUETOOTH VARIABLES ================================================================================================
-port = 'COM8'
+port = 'COM3'
 num_bytes = 39
 baud_rate = 115200
 bluetooth_serial = None
@@ -301,6 +301,8 @@ def update_speed():
 def send_message(command):
     global bluetooth_serial, serial_lock
     
+    command = command + "\n"        # ADD A NULL TERMINATOR CHARACTER!!!
+    
     with serial_lock:
         bluetooth_serial.write(command.encode('utf-8'))
         
@@ -365,10 +367,9 @@ def handle_Rx():
     global bluetooth_serial, serial_lock
     
     while 1:
-        print("Reading data...")
         with serial_lock:
-            response = bluetooth_serial.read(num_bytes)
-            # response = bluetooth_serial.readline()
+            #response = bluetooth_serial.read(num_bytes)
+            response = bluetooth_serial.readline()
             
         if response:
             print("Received data: ", response)
@@ -378,7 +379,7 @@ def handle_Rx():
 
             
         response_str = str(response)[2:]        #strip out the first two characters "b'"
-        response_str = response_str[:-1]        #strip out the last character too "'"
+        response_str = response_str[:-3]        #strip out the three characters too "\n'"
         print('====================')
         
         # parse the response
@@ -393,7 +394,6 @@ def handle_Rx():
         
 
 def start_Rx_thread():
-    print("Attempting to start Rx thread")
     rx_thread = threading.Thread(target=handle_Rx, daemon=True) #run in the background
     rx_thread.start()
     

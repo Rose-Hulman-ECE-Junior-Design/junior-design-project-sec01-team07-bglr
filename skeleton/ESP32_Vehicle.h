@@ -121,7 +121,7 @@ void initSpeedServo();
 void initCapacitorPin();
 
 void setSteeringAngle(float angle);
-void setServoSpeed(float duty);
+void setServoSpeed(uint32_t duty);
 float calculateSteeringAngle();
 float calculateServoSpeed();
 
