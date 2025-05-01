@@ -14,7 +14,7 @@ void setup() {
   //initialize all devices
   initSerialMonitor();
   initHUSKYLENS();
-  SerialBT.begin("CurrentHogs_ESP32_SPP_Device_SIMONI");       // This is the Bluetooth device name
+  SerialBT.begin("CurrentHogs_ESP32");       // This is the Bluetooth device name
   Serial.println("Bluetooth SPP Started. Pair your device.");
   initINA219();
   initSteeringServo();

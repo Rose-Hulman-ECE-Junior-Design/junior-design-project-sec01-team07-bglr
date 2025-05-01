@@ -77,6 +77,10 @@
 #define CAP_VOLTAGE_SCALING       10
 #define ADC_RESOLUTION            1024
 #define ADC_MAX_VOLTAGE           3.3
+
+
+#define DEFAULT_KP1               1.2
+#define DEFAULT_KP2               0.5
 //============================================================================
 
 // GLOBAL VARIABLES (Declarations Only) ======================================

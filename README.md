@@ -30,6 +30,11 @@ matplotlib
 PyQt6
 Pyserial
 
+Any version of Python 3 should work. To install a package, open up your Command Terminal and type 'pip install my_package' For example:
+
+pip install pandas
+
+
 How to install Python:
 https://www.geeksforgeeks.org/how-to-install-python-on-windows/
 
@@ -47,9 +52,9 @@ To run the VC-GUI, enter the following line into the Command Terminal
 
 python3 ControllerGUI.py
 
-You should see the following 
+You should see something like the following line printed to the Command Terminal if everything connected properly.
 
-Connected to port COM8 at 115200 baud.
+Connected to port COM9 at 115200 baud.
 
 ### Arduino installation
 -	Go to the [Arduino website](https://www.arduino.cc/en/software/) and select Download Options > Windows 10+ or appropriate operating system

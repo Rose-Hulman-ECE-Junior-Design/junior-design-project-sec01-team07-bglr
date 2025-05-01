@@ -5,7 +5,7 @@ import time
 import threading
 import pandas as pd
 import matplotlib.pyplot as plt
-from PyQt6.QtWidgets import QApplication, QWidget, QRadioButton, QLabel, QPushButton, QLineEdit, QVBoxLayout, QFileDialog, QProgressBar, QGridLayout
+from PyQt6.QtWidgets import QApplication, QWidget, QRadioButton, QLabel, QPushButton, QDoubleSpinBox, QLineEdit, QVBoxLayout, QFileDialog, QProgressBar, QGridLayout
 from PyQt6.QtCore import Qt, QTimer
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 
@@ -17,12 +17,11 @@ WINDOW_HEIGHT = 800
 data_file = "temp2.csv" #filepath to .csv file where data will be stored
 
 
-V_inst = 7.223
-I_inst = 302
-P_inst = 2181.34
+V_inst = 0
+I_inst = 0
+P_inst = 0
 S_inst = "IDLE"
-E_inst = 200
-countdown = 90.0
+E_inst = 0
 timerDone = False
 log_num = 0
 
@@ -30,11 +29,13 @@ speed = 0
 
 
 state_map = {
-    "0": "IDLE",
-    "1": "DRIVING",
-    "2": "CHARGING",
-    "3": "COMPLETE"
+    0: "IDLE",
+    1: "DRIVING",
+    2: "CHARGING",
+    3: "COMPLETE"
 }
+
+powerSupply_capacitance = 100   #
 
 
 # BLUETOOTH VARIABLES ================================================================================================
@@ -46,6 +47,17 @@ serial_lock = threading.Lock()
 add_to_log = False
 time_step = 0.5
 running_time = 0
+
+# SYSTEM VARIABLES ==================================================================================================
+V_MAX = 12                  # TODO: consult LL and BB about these numbers
+I_MAX = 1300
+P_MAX = V_MAX * I_MAX
+E_MAX = 300
+
+RECHARGING_PERIOD = 45      # recharging period, seconds
+FIRST_DRIVING_PERIOD = 60
+SECOND_DRIVING_PERIOD = 30
+
 
 # ===================================================================================================================
 # ===================================================================================================================
@@ -115,14 +127,16 @@ class RunViewer(QWidget):
         # Buttons
         self.start_button = QPushButton("Start")
         self.stop_button = QPushButton("Stop")
+        self.recharge_button = QPushButton("Recharge")
         
-        all_buttons = [self.start_button, self.stop_button]
+        all_buttons = [self.start_button, self.stop_button, self.recharge_button]
         
         for i in all_buttons:
             i.setMinimumSize(80, 200)  # (ancho, largo)
             
         self.start_button.clicked.connect(send_START)
         self.stop_button.clicked.connect(send_STOP)
+        self.recharge_button.clicked.connect(self.enter_Recharge)
         
         # Create radio buttons for options
         self.speed1_radio = QRadioButton("Speed 1", self)
@@ -133,13 +147,27 @@ class RunViewer(QWidget):
         self.speed6_radio = QRadioButton("Speed 6", self)
         
         radio_buttons = [self.speed1_radio, self.speed2_radio, self.speed3_radio, self.speed4_radio, self.speed5_radio, self.speed6_radio]
-        
-        k = 1
-        for i in radio_buttons:
-            i.toggled.connect(lambda: self.update_speed(k))
-            k = k + 1
 
-                
+        for idx, button in enumerate(radio_buttons, start=1):
+            button.toggled.connect(lambda checked, k=idx: self.update_speed(k))
+            i.setFixedSize(200, 100)
+        
+        # Create KP Controllers
+        self.kp1_spin = QDoubleSpinBox(self)
+        self.kp1_spin.setRange(0.0, 5.0)       # Set desired range
+        self.kp1_spin.setDecimals(3)             # Number of decimal places
+        self.kp1_spin.setSingleStep(0.1)         # Increment step
+        self.kp1_spin.setPrefix("Kp1: ")
+
+        self.kp2_spin = QDoubleSpinBox(self)
+        self.kp2_spin.setRange(0.0, 5.0)
+        self.kp2_spin.setDecimals(3)
+        self.kp2_spin.setSingleStep(0.1)
+        self.kp2_spin.setPrefix("Kp2: ")
+        
+        self.kp1_spin.valueChanged.connect(self.kp1_changed)
+        self.kp2_spin.valueChanged.connect(self.kp2_changed)
+
         # Set up the timer to call update_run_graphics every 200ms
         timer = QTimer(self)
         timer.timeout.connect(self.update_run_graphics)  # Connect the update function
@@ -155,12 +183,13 @@ class RunViewer(QWidget):
         self.energy_label = QLabel("Energy: " + str(E_inst) + " J", self)
         
         self.state_label = QLabel(S_inst)
-        self.time_label = QLabel("Time Remaining: " + str(countdown))
+        self.time_label = QLabel("Time Remaining: " + str(FIRST_DRIVING_PERIOD))
         
         all_labels = [self.voltage_label, self.current_label, self.power_label, self.energy_label, self.state_label, self.time_label]
         for i in all_labels:
             i.setStyleSheet("QLabel { color: black; font-size: 20px; }")
             i.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            i.setFixedSize(200, 100)
         
         # Progress Bars
         self.voltage_progress = QProgressBar(self)      # VOLTAGE
@@ -197,52 +226,66 @@ class RunViewer(QWidget):
         layout.addWidget(self.instructions_label, 0, 0, 1, 6)   # add the instruction and timer label
         layout.addWidget(self.time_label, 1, 4, 1, 2)
         
-        layout.addWidget(self.voltage_label, 4, 0, 1, 1)        # add the progress labels
-        layout.addWidget(self.current_label, 4, 1, 1, 1)
-        layout.addWidget(self.power_label, 4, 2, 1, 1)
-        layout.addWidget(self.energy_label, 4, 3, 1, 1)
+        layout.addWidget(self.voltage_label, 5, 0, 1, 1)        # add the progress labels
+        layout.addWidget(self.current_label, 5, 1, 1, 1)
+        layout.addWidget(self.power_label, 5, 2, 1, 1)
+        layout.addWidget(self.energy_label, 5, 3, 1, 1)
         layout.addWidget(self.state_label, 1, 0, 1, 3)
         
-        layout.addWidget(self.voltage_progress, 2, 0, 2, 1)     # add the progress bars
-        layout.addWidget(self.current_progress, 2, 1, 2, 1)
-        layout.addWidget(self.power_progress, 2, 2, 2, 1)
-        layout.addWidget(self.energy_progress, 2, 3, 2, 1)
+        layout.addWidget(self.voltage_progress, 2, 0, 3, 1)     # add the progress bars
+        layout.addWidget(self.current_progress, 2, 1, 3, 1)
+        layout.addWidget(self.power_progress, 2, 2, 3, 1)
+        layout.addWidget(self.energy_progress, 2, 3, 3, 1)
         
         layout.addWidget(self.start_button, 2, 4, 1, 2)         # add the stop/start buttons
         layout.addWidget(self.stop_button, 3, 4, 1, 2)
+        layout.addWidget(self.recharge_button, 4, 4, 1, 2)
         
-        layout.addWidget(self.speed1_radio, 5, 0, 1, 1)         # add the speed selector radio buttons
-        layout.addWidget(self.speed2_radio, 5, 1, 1, 1)
-        layout.addWidget(self.speed3_radio, 5, 2, 1, 1)
-        layout.addWidget(self.speed4_radio, 5, 3, 1, 1)
-        layout.addWidget(self.speed5_radio, 5, 4, 1, 1)
-        layout.addWidget(self.speed6_radio, 5, 5, 1, 1)
+        layout.addWidget(self.speed1_radio, 6, 0, 1, 1)         # add the speed selector radio buttons
+        layout.addWidget(self.speed2_radio, 6, 1, 1, 1)
+        layout.addWidget(self.speed3_radio, 6, 2, 1, 1)
+        layout.addWidget(self.speed4_radio, 6, 3, 1, 1)
+        layout.addWidget(self.speed5_radio, 6, 4, 1, 1)
+        layout.addWidget(self.speed6_radio, 6, 5, 1, 1)
+        
+        layout.addWidget(self.kp1_spin, 7, 0, 1, 1)
+        layout.addWidget(self.kp2_spin, 7, 1, 1, 1)
         
         self.setLayout(layout)
         
     # updates the RunViewer window graphics every 200 ms
     def update_run_graphics(self):
     # Update the progress bars and labels based on the latest voltage and current
-        global countdown
+        global FIRST_DRIVING_PERIOD, timerDone
          
         self.voltage_label.setText("Voltage: " + str(V_inst) + " V")
         self.current_label.setText("Current: " + str(I_inst) + " mA")
         self.power_label.setText("Power: " + str(P_inst)[:7] + " mW")
         self.energy_label.setText("Energy: " + str(E_inst) + " J")
         self.state_label.setText(S_inst)
-        self.time_label.setText("Time Remaining: " + "{:.2f}".format(countdown))
+        self.time_label.setText("Time Remaining: " + "{:.2f}".format(FIRST_DRIVING_PERIOD))
         
-        self.voltage_progress.setValue(int((V_inst / 12) * 100))  # Set voltage as percentage (max 15V)
-        self.current_progress.setValue(int((I_inst / 1500) * 100))  # Set current as percentage (max 5A)
-        self.power_progress.setValue(int((P_inst / 3000) * 100))
-        self.energy_progress.setValue(int((E_inst / 500) * 100))
+        self.voltage_progress.setValue(int((V_inst / V_MAX) * 100))  # Set voltage as percentage (max 15V)
+        self.current_progress.setValue(int((I_inst / I_MAX) * 100))  # Set current as percentage (max 5A)
+        self.power_progress.setValue(int((P_inst / P_MAX) * 100))
+        self.energy_progress.setValue(int((E_inst / E_MAX) * 100))
         
-        countdown =  countdown - 0.2  #timer tick
+        FIRST_DRIVING_PERIOD =  FIRST_DRIVING_PERIOD - 0.2  #timer tick (200ms)
         
-        global timerDone
-        if countdown <= 0:
+        if FIRST_DRIVING_PERIOD <= 0:
             timerDone = True
-            
+    
+    def enter_Recharge(self):
+        #TODO: restart the timer for 45 seconds
+        send_message("RECHARGE")
+        
+    def kp1_changed(self, value):
+        send_message(f"Kp1={value:.3f}")  # You can format the value to 3 decimals if needed
+
+    def kp2_changed(self, value):
+        send_message(f"Kp2={value:.3f}")
+        
+    # Updates Vehicle speed.
     def update_speed(self, speednum):
         match speednum:
             case 1:
@@ -349,6 +392,7 @@ def update_speed():
 
 def send_message(command):
     global bluetooth_serial, serial_lock
+    print("Sending: " + command)
     
     command = command + "\n"        # ADD A NULL TERMINATOR CHARACTER!!!
     
@@ -381,33 +425,31 @@ def initialize_csv(filepath):
 """ Separate the numbers out from the response string"""
 """ Separate the numbers out from the response string"""
 def parse_dataLog(response):
-    values = response.split(":")
-
     global I_inst, V_inst, P_inst, S_inst, E_inst, add_to_log, log_num, state_map
+    
+    values = response.split(":")
     
     I_inst = float(values[0])             # current in mA
     V_inst = float(values[1])             # voltage in V
     P_inst = I_inst * V_inst              # power in mW
-    S_inst = "foo"
-    #S_inst = state_map[str(values)]
-    #S_inst = state_map.get(values[2].strip(), "UNKNOWN")          # state enumeration
-    v_cap = float(values[3])
-
+    S_inst = state_map.get(int(values[2]), "UNKNOWN")    # current state
+    v_cap = float(values[3])              # capacitor voltage
+    
+    
     # TODO: Scale v_cap back to its normal value
-
-    E_inst = v_cap * v_cap * 1000 / 2  # turn power supply voltage to energy
-
-
-    print("TIME (s): " + str(log_num *0.5))
-    print("Current (mA): " + str(I_inst))
-    print("Voltage (V): " + str(V_inst))
-    print("Power (mW): " + str(P_inst)[:7])
-    print("Energy (J):" + str(E_inst))
+    # E = (1/2)CV^2
+    E_inst = v_cap * v_cap * powerSupply_capacitance / 2  # turn power supply voltage to energy
 
 
+    #print("TIME (s): " + str(log_num *0.5))
+    #print("Current (mA): " + str(I_inst))
+    #print("Voltage (V): " + str(V_inst))
+    #print("Power (mW): " + str(P_inst)[:7])
+    #print("Energy (J):" + str(E_inst))
+    #print("State: " + S_inst)
 
     if add_to_log:
-        log = [log_num, V_inst, I_inst, P_inst, E_inst, S_inst]
+        log = [log_num * 0.5, V_inst, I_inst, P_inst, E_inst, S_inst]
         #     packet num, Voltage, Current, Power, Energy, State
         add_to_csv(data_file, log)
         log_num = log_num + 1
@@ -429,17 +471,14 @@ def handle_Rx():
         with serial_lock:
             #response = bluetooth_serial.read(num_bytes)
             response = bluetooth_serial.readline()
-            
-        if response:
-            print("Received data: ", response)
-        else:
-            print("No data received")
+        
+        if not response:
+            print("No data received.")
             continue
-
             
         response_str = str(response)[2:]        #strip out the first two characters "b'"
         response_str = response_str[:-3]        #strip out the three characters too "\n'"
-        print('====================')
+        # print('====================')
         
         # parse the response
         parse_dataLog(response_str)

@@ -18,8 +18,8 @@
 #include "ESP32_Vehicle.h"
 
 
-float Kp1 = 1.2;
-float Kp2 = 0.5;
+float Kp1 = DEFAULT_KP1;                // proportional angle error parameter            
+float Kp2 = DEFAULT_KP2;                // proportional center error parameter
 //float Kd, Ki = 1;
 //float dt, integral, derivative = 2;
 //float prev_error = 0;
@@ -250,7 +250,7 @@ float calculateSteeringAngle(){
 
    //find the error angle from the direction of the arrow
    float r = ((float)(result.xTarget - result.xOrigin) )/ ( (float)(result.yTarget - result.yOrigin));
-   float error = THETA_TARGET + ( atan(r) * RAD_TO_DEG );
+   float angle_error = THETA_TARGET + ( atan(r) * RAD_TO_DEG );
 
    //find the midpoint of the line, compare to the center of the screen
    float center_error = ((float)(result.xOrigin + result.xTarget))/2 - HUSKYLENS_X_CENTER;
@@ -268,7 +268,7 @@ float calculateSteeringAngle(){
 
 //   prev_error = error;
    
-   return Kp1 * error - Kp2 * center_error;
+   return Kp1 * angle_error - Kp2 * center_error;
 
    //TODO:
    //make sure the returned steering angle does not exceed servo range
@@ -325,8 +325,10 @@ String readGUICommand(){
 
 /*
  * Parse an incoming GUI command. Will be called repeatedly
- * in the main loop of skeleton.ino so the system may
- * always be checking for updates from the GUI.
+ * in the main loop of main.ino so the system may
+ * always be checking for updates/commands from the GUI.
+ * 
+ * This function updates the global states. 
  * 
  * Inputs - none
  * Outputs - none
@@ -335,75 +337,84 @@ void parseGUICommand(){
   //interpret the GUI command
   String command = readGUICommand();
   
-  if (command.length() == 0){
+  if (command.length() == 0){  //no command was received, return
     return;
   }
   
   Serial.print("Received: "); Serial.println(command);
 
   //interpret each command, change state if necessary
-  //TODO: develop message key, determine other types of messages
   if (command.equals("Start")){
-    currentState = DRIVING;
-    setServoSpeed(current_speed);
-    Serial.println("Vehicle is now in DRIVING state.");
-    Serial.print("Speed Servo: "); Serial.println(current_speed);
+      currentState = DRIVING;
+      setServoSpeed(current_speed);
+      Serial.println("Vehicle is now in DRIVING state.");
+      Serial.print("Speed Servo: "); Serial.println(current_speed);
     
    }else if (command.equals("Stop")){
-    currentState = IDLE;
-    ledcWrite(SPEED_SERVO, SPEED_STOP);
-    Serial.println("Vehicle is now in IDLE state.");
-    Serial.print("Speed Servo: "); Serial.println(current_speed);
+      currentState = IDLE;
+      ledcWrite(SPEED_SERVO, SPEED_STOP);
+      Serial.println("Vehicle is now in IDLE state.");
+      Serial.print("Speed Servo: "); Serial.println(current_speed);
     
    } else if (command.equals("Recharge")){
-    currentState = RECHARGING;
-    Serial.println("Vehicle is now in RECHARGING state.");
-    
+      currentState = RECHARGING;
+      Serial.println("Vehicle is now in RECHARGING state.");
     
    } else if (command.equals("S1")){
-     Serial.print("Speed set to "); Serial.println(SPEED_1);
-     currentState = DRIVING;
-     current_speed = SPEED_1;
-     setServoSpeed(current_speed);
-     Serial.print("Speed Servo: "); Serial.println(current_speed);
+       Serial.print("Speed set to "); Serial.println(SPEED_1);
+       currentState = DRIVING;
+       current_speed = SPEED_1;
+       setServoSpeed(current_speed);
+       Serial.print("Speed Servo: "); Serial.println(current_speed);
     
    }else if (command.equals("S2")){
-     Serial.print("Speed set to "); Serial.println(SPEED_2);
-     currentState = DRIVING;
-     current_speed = SPEED_2;
-     setServoSpeed(current_speed);
-     Serial.print("Speed Servo: "); Serial.println(current_speed);
+       Serial.print("Speed set to "); Serial.println(SPEED_2);
+       currentState = DRIVING;
+       current_speed = SPEED_2;
+       setServoSpeed(current_speed);
+       Serial.print("Speed Servo: "); Serial.println(current_speed);
     
    }else if (command.equals("S3")){
-     Serial.print("Speed set to "); Serial.println(SPEED_3);
-     currentState = DRIVING;
-     current_speed = SPEED_3;
-     setServoSpeed(current_speed);
-     Serial.print("Speed Servo: "); Serial.println(current_speed);
+       Serial.print("Speed set to "); Serial.println(SPEED_3);
+       currentState = DRIVING;
+       current_speed = SPEED_3;
+       setServoSpeed(current_speed);
+       Serial.print("Speed Servo: "); Serial.println(current_speed);
     
    }else if (command.equals("S4")){
-    Serial.print("Speed set to "); Serial.println(SPEED_4);
-    currentState = DRIVING;
-    current_speed = SPEED_4;
-    setServoSpeed(current_speed);
-    Serial.print("Speed Servo: "); Serial.println(current_speed);
+      Serial.print("Speed set to "); Serial.println(SPEED_4);
+      currentState = DRIVING;
+      current_speed = SPEED_4;
+      setServoSpeed(current_speed);
+      Serial.print("Speed Servo: "); Serial.println(current_speed);
     
    }else if (command.equals("S5")){
-    Serial.print("Speed set to "); Serial.println(SPEED_5);
-    currentState = DRIVING;
-    current_speed = SPEED_5;
-    setServoSpeed(current_speed);
-    Serial.print("Speed Servo: "); Serial.println(current_speed);
+      Serial.print("Speed set to "); Serial.println(SPEED_5);
+      currentState = DRIVING;
+      current_speed = SPEED_5;
+      setServoSpeed(current_speed);
+      Serial.print("Speed Servo: "); Serial.println(current_speed);
     
    }else if (command.equals("S6")){
-    Serial.print("Speed set to "); Serial.println(SPEED_6);
-    currentState = DRIVING;
-    current_speed = SPEED_6;
-    setServoSpeed(current_speed);
-    Serial.print("Speed Servo: "); Serial.println(current_speed);
+      Serial.print("Speed set to "); Serial.println(SPEED_6);
+      currentState = DRIVING;
+      current_speed = SPEED_6;
+      setServoSpeed(current_speed);
+      Serial.print("Speed Servo: "); Serial.println(current_speed);
     
-   }else if (command.equals("XX")){
-    Serial.println("Command entered was XX.");
+   }else if (command.equals("RECHARGE")){
+      currentState = RECHARGING;
+      ledcWrite(SPEED_SERVO, SPEED_STOP);    
+   } else if (command.startsWith("Kp1=")){
+      String newVal = command.substring(4);   //strip out the first 4 chars
+      Kp1 = newVal.toFloat();
+      Serial.print("Kp1 set to "); Serial.println(Kp1);
+    
+    
+   } else if (command.startsWith("Kp2=")){
+      String newVal = command.substring(4);   //strip out the first 4 chars
+      Kp1 = newVal.toFloat();
+      Serial.print("Kp1 set to "); Serial.println(Kp1);
     
    }else {
     //Serial.println("Command could not be parsed."); 
@@ -411,6 +422,11 @@ void parseGUICommand(){
    
 }
 
+/*
+ * Takes a float and converts to a string.
+ * Replaces spaces with zeroes so the number of bytes
+ * sent is always consistent.
+ */
 void floatToZeroPaddedStr(float val, int width, int precision, char* out) {
   dtostrf(val, width, precision, out);
   for (int i = 0; out[i] == ' '; i++) {
@@ -420,6 +436,10 @@ void floatToZeroPaddedStr(float val, int width, int precision, char* out) {
 
 /*
  * Send data log to the GUI via Bluetooth link.
+ * 
+ * Reads vehicle data and packages it into a string packet
+ * which is sent to the Controller GUI via the serial Bluetooth
+ * link. 
  * 
  * Inputs - none
  * Outputs - none
@@ -437,18 +457,24 @@ void sendDataLog(){
   floatToZeroPaddedStr(current_mA, FLOAT_MIN_WIDTH, NUM_DIGITS_AFTER_DECIMAL, current);
   floatToZeroPaddedStr(loadvoltage, FLOAT_MIN_WIDTH, NUM_DIGITS_AFTER_DECIMAL, voltage);
   floatToZeroPaddedStr(cap_voltage, FLOAT_MIN_WIDTH, NUM_DIGITS_AFTER_DECIMAL, v_cap);
-  floatToZeroPaddedStr((float)currentState, FLOAT_MIN_WIDTH, NUM_DIGITS_AFTER_DECIMAL, state);
 
-  
-//  dtostrf(current_mA, FLOAT_MIN_WIDTH, NUM_DIGITS_AFTER_DECIMAL, current);           
-//  dtostrf(loadvoltage, FLOAT_MIN_WIDTH, NUM_DIGITS_AFTER_DECIMAL, voltage);
-//  dtostrf(cap_voltage, FLOAT_MIN_WIDTH, NUM_DIGITS_AFTER_DECIMAL, v_cap);
+  char stateChar;
+  switch (currentState){
+  case IDLE:  
+    stateChar = '0';
+  case DRIVING:
+    stateChar = '1';
+  case RECHARGING:
+    stateChar = '2';
+  default:
+    stateChar = '0';
+  }
 
   //concatenate serial package of data, do some string manipulation
-  char package[FLOAT_BUFF_SIZE*4 + 2]; // Adjust size as needed
-  sprintf(package, "%s:%s:%s:%s\n", current, voltage, state, v_cap);
+  char package[FLOAT_BUFF_SIZE*3 + 3 + 1 + 1]; // Adjust size as needed
+  sprintf(package, "%s:%s:%c:%s\n", current, voltage, stateChar, v_cap);
 
-  Serial.println(package);
+  //Serial.println(package);
   SerialBT.print(package); 
 
 }      

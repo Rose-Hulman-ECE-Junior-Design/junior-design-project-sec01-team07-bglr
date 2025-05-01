@@ -25,8 +25,6 @@ time_step = 0.5
 running_time = 0
 
 
-
-
 #=========================================================================================
 """ Separate the numbers out from the response string"""
 def parse_dataLog(response):
