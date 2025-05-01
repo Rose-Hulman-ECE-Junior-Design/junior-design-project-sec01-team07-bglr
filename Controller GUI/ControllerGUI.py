@@ -5,7 +5,7 @@ import time
 import threading
 import pandas as pd
 import matplotlib.pyplot as plt
-from PyQt6.QtWidgets import QApplication, QWidget, QLabel, QPushButton, QLineEdit, QVBoxLayout, QFileDialog, QProgressBar, QGridLayout
+from PyQt6.QtWidgets import QApplication, QWidget, QRadioButton, QLabel, QPushButton, QLineEdit, QVBoxLayout, QFileDialog, QProgressBar, QGridLayout
 from PyQt6.QtCore import Qt, QTimer
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 
@@ -20,11 +20,14 @@ data_file = "temp2.csv" #filepath to .csv file where data will be stored
 V_inst = 7.223
 I_inst = 302
 P_inst = 2181.34
-S_inst = "DRIVING"
+S_inst = "IDLE"
 E_inst = 200
 countdown = 90.0
 timerDone = False
 log_num = 0
+
+speed = 0
+
 
 state_map = {
     "0": "IDLE",
@@ -56,9 +59,17 @@ class LogViewer(QWidget):
         self.plot_button.clicked.connect(self.plotPowerLog)
         self.canvas = FigureCanvas(plt.Figure(figsize=(8, 6)))
         
+        (tot_energy_spent, tot_energy_gained) = calculateEnergyUsage(data_file)
+        
+        self.energy_spent_label = QLabel("Total Energy Spent: " + str(tot_energy_spent) + " J")
+        self.energy_gained_label = QLabel("Total Energy Gained: " + str(tot_energy_gained) + " J")
+        
         layout = QVBoxLayout()
         layout.addWidget(self.plot_button)
         layout.addWidget(self.canvas)
+        layout.addWidget(self.energy_spent_label)
+        layout.addWidget(self.energy_gained_label)
+        
         self.setLayout(layout)
         
     def plotPowerLog(self):
@@ -101,6 +112,7 @@ class RunViewer(QWidget):
         self.setWindowTitle("Run Viewer")
         self.resize(WINDOW_WIDTH, WINDOW_HEIGHT)
         
+        # Buttons
         self.start_button = QPushButton("Start")
         self.stop_button = QPushButton("Stop")
         
@@ -108,16 +120,35 @@ class RunViewer(QWidget):
         
         for i in all_buttons:
             i.setMinimumSize(80, 200)  # (ancho, largo)
+            
+        self.start_button.clicked.connect(send_START)
+        self.stop_button.clicked.connect(send_STOP)
         
+        # Create radio buttons for options
+        self.speed1_radio = QRadioButton("Speed 1", self)
+        self.speed2_radio = QRadioButton("Speed 2", self)
+        self.speed3_radio = QRadioButton("Speed 3", self)
+        self.speed4_radio = QRadioButton("Speed 4", self)
+        self.speed5_radio = QRadioButton("Speed 5", self)
+        self.speed6_radio = QRadioButton("Speed 6", self)
+        
+        radio_buttons = [self.speed1_radio, self.speed2_radio, self.speed3_radio, self.speed4_radio, self.speed5_radio, self.speed6_radio]
+        
+        k = 1
+        for i in radio_buttons:
+            i.toggled.connect(lambda: self.update_speed(k))
+            k = k + 1
+
+                
         # Set up the timer to call update_run_graphics every 200ms
         timer = QTimer(self)
         timer.timeout.connect(self.update_run_graphics)  # Connect the update function
         timer.start(200)  # Call every 200ms
         
+        # Labels
         self.instructions_label = QLabel("Insert RunViewer Instructions Here.")
         self.instructions_label.resize(50, 30)
         
-        # Labels
         self.voltage_label = QLabel("Voltage: " + str(V_inst) + " V", self)
         self.current_label = QLabel("Current: " + str(I_inst) + " mA", self)
         self.power_label = QLabel("Power: " + str(P_inst)[:7] + " mW", self)
@@ -160,30 +191,32 @@ class RunViewer(QWidget):
             i.setOrientation(Qt.Orientation.Vertical)
             i.setAlignment(Qt.AlignmentFlag.AlignCenter)
         
-        # Buttons
-        self.start_button.clicked.connect(send_START)
-        self.stop_button.clicked.connect(send_STOP)
 
         # Adding to Layout - grid format
         layout = QGridLayout()
-        layout.addWidget(self.instructions_label, 0, 0, 1, 6)
+        layout.addWidget(self.instructions_label, 0, 0, 1, 6)   # add the instruction and timer label
         layout.addWidget(self.time_label, 1, 4, 1, 2)
         
-        layout.addWidget(self.voltage_label, 4, 0, 1, 1)
+        layout.addWidget(self.voltage_label, 4, 0, 1, 1)        # add the progress labels
         layout.addWidget(self.current_label, 4, 1, 1, 1)
         layout.addWidget(self.power_label, 4, 2, 1, 1)
         layout.addWidget(self.energy_label, 4, 3, 1, 1)
         layout.addWidget(self.state_label, 1, 0, 1, 3)
         
-        layout.addWidget(self.voltage_progress, 2, 0, 2, 1)
+        layout.addWidget(self.voltage_progress, 2, 0, 2, 1)     # add the progress bars
         layout.addWidget(self.current_progress, 2, 1, 2, 1)
         layout.addWidget(self.power_progress, 2, 2, 2, 1)
         layout.addWidget(self.energy_progress, 2, 3, 2, 1)
         
-        layout.addWidget(self.start_button, 2, 4, 1, 2)
+        layout.addWidget(self.start_button, 2, 4, 1, 2)         # add the stop/start buttons
         layout.addWidget(self.stop_button, 3, 4, 1, 2)
         
-        
+        layout.addWidget(self.speed1_radio, 5, 0, 1, 1)         # add the speed selector radio buttons
+        layout.addWidget(self.speed2_radio, 5, 1, 1, 1)
+        layout.addWidget(self.speed3_radio, 5, 2, 1, 1)
+        layout.addWidget(self.speed4_radio, 5, 3, 1, 1)
+        layout.addWidget(self.speed5_radio, 5, 4, 1, 1)
+        layout.addWidget(self.speed6_radio, 5, 5, 1, 1)
         
         self.setLayout(layout)
         
@@ -209,8 +242,21 @@ class RunViewer(QWidget):
         global timerDone
         if countdown <= 0:
             timerDone = True
-
-
+            
+    def update_speed(self, speednum):
+        match speednum:
+            case 1:
+                send_message("S1")
+            case 2:
+                send_message("S1")    
+            case 3:
+                send_message("S3")
+            case 4:
+                send_message("S4")  
+            case 5:
+                send_message("S5")
+            case 6:
+                send_message("S6")  
 # ==================================================================================================================
 # ===== MAIN WINDOW ================================================================================================
 class MainWindow(QWidget):
@@ -273,11 +319,14 @@ class MainWindow(QWidget):
         print("Starting a new run.")
         
         global add_to_log, data_file
-        data_file = self.path_input.text()
+        
+        try:
+            data_file = self.path_input.text()
+        except:
+            print("User has not selected a file. Default file will be used.")
         
         initialize_csv(data_file)
         add_to_log = True           # only start writing data to log file when we have started a run
-        
         
         #open the run window
         self.runviewer_window = RunViewer()
@@ -315,6 +364,14 @@ def send_message(command):
 # ==============================================================================
 #=========================================================================================
 
+# 
+def calculateEnergyUsage(filepath):
+    # TODO: implement
+    total_energy_spent = 10
+    total_energy_regained = 2
+    
+    return total_energy_spent, total_energy_regained
+
 def initialize_csv(filepath):
     with open(filepath, mode="w", newline="") as file:
         writer = csv.writer(file)
@@ -331,6 +388,7 @@ def parse_dataLog(response):
     I_inst = float(values[0])             # current in mA
     V_inst = float(values[1])             # voltage in V
     P_inst = I_inst * V_inst              # power in mW
+    S_inst = state_map[str(values)]
     S_inst = state_map.get(values[2].strip(), "UNKNOWN")          # state enumeration
     v_cap = float(values[3])
 

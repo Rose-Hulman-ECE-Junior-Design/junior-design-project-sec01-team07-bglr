@@ -356,21 +356,27 @@ void parseGUICommand(){
     Serial.println("Vehicle is now in RECHARGING state.");
     
    } else if (command.equals("S1")){
+     Serial.print("Speed set to "); Serial.println(SPEED_1);
      current_speed = SPEED_1;
     
    }else if (command.equals("S2")){
+     Serial.print("Speed set to "); Serial.println(SPEED_2);
      current_speed = SPEED_2;
     
    }else if (command.equals("S3")){
+     Serial.print("Speed set to "); Serial.println(SPEED_3);
      current_speed = SPEED_3;
     
    }else if (command.equals("S4")){
+    Serial.print("Speed set to "); Serial.println(SPEED_4);
     current_speed = SPEED_4;
     
    }else if (command.equals("S5")){
+    Serial.print("Speed set to "); Serial.println(SPEED_5);
     current_speed = SPEED_5;
     
    }else if (command.equals("S6")){
+    Serial.print("Speed set to "); Serial.println(SPEED_6);
     current_speed = SPEED_6;
     
    }else if (command.equals("XX")){
@@ -409,6 +415,7 @@ void sendDataLog(){
   floatToZeroPaddedStr(loadvoltage, FLOAT_MIN_WIDTH, NUM_DIGITS_AFTER_DECIMAL, voltage);
   floatToZeroPaddedStr(cap_voltage, FLOAT_MIN_WIDTH, NUM_DIGITS_AFTER_DECIMAL, v_cap);
   floatToZeroPaddedStr((float)currentState, FLOAT_MIN_WIDTH, NUM_DIGITS_AFTER_DECIMAL, state);
+
   
 //  dtostrf(current_mA, FLOAT_MIN_WIDTH, NUM_DIGITS_AFTER_DECIMAL, current);           
 //  dtostrf(loadvoltage, FLOAT_MIN_WIDTH, NUM_DIGITS_AFTER_DECIMAL, voltage);
@@ -418,7 +425,7 @@ void sendDataLog(){
   char package[FLOAT_BUFF_SIZE*4 + 2]; // Adjust size as needed
   sprintf(package, "%s:%s:%s:%s\n", current, voltage, state, v_cap);
 
-  //Serial.println(package);
+  Serial.println(package);
   SerialBT.print(package); 
 
 }      
