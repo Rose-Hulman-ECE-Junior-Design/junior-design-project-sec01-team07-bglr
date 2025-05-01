@@ -35,7 +35,7 @@ float current_mA = 0;
 float loadvoltage = 0;
 float power_mW = 0;
 
-extern int current_speed = SPEED_2;
+extern int current_speed = SPEED_3;
 
 VehicleState currentState = IDLE;
 int dataLog_num;
@@ -345,39 +345,62 @@ void parseGUICommand(){
   //TODO: develop message key, determine other types of messages
   if (command.equals("Start")){
     currentState = DRIVING;
+    setServoSpeed(current_speed);
     Serial.println("Vehicle is now in DRIVING state.");
+    Serial.print("Speed Servo: "); Serial.println(current_speed);
     
    }else if (command.equals("Stop")){
     currentState = IDLE;
+    ledcWrite(SPEED_SERVO, SPEED_STOP);
     Serial.println("Vehicle is now in IDLE state.");
+    Serial.print("Speed Servo: "); Serial.println(current_speed);
     
    } else if (command.equals("Recharge")){
     currentState = RECHARGING;
     Serial.println("Vehicle is now in RECHARGING state.");
     
+    
    } else if (command.equals("S1")){
      Serial.print("Speed set to "); Serial.println(SPEED_1);
+     currentState = DRIVING;
      current_speed = SPEED_1;
+     setServoSpeed(current_speed);
+     Serial.print("Speed Servo: "); Serial.println(current_speed);
     
    }else if (command.equals("S2")){
      Serial.print("Speed set to "); Serial.println(SPEED_2);
+     currentState = DRIVING;
      current_speed = SPEED_2;
+     setServoSpeed(current_speed);
+     Serial.print("Speed Servo: "); Serial.println(current_speed);
     
    }else if (command.equals("S3")){
      Serial.print("Speed set to "); Serial.println(SPEED_3);
+     currentState = DRIVING;
      current_speed = SPEED_3;
+     setServoSpeed(current_speed);
+     Serial.print("Speed Servo: "); Serial.println(current_speed);
     
    }else if (command.equals("S4")){
     Serial.print("Speed set to "); Serial.println(SPEED_4);
+    currentState = DRIVING;
     current_speed = SPEED_4;
+    setServoSpeed(current_speed);
+    Serial.print("Speed Servo: "); Serial.println(current_speed);
     
    }else if (command.equals("S5")){
     Serial.print("Speed set to "); Serial.println(SPEED_5);
+    currentState = DRIVING;
     current_speed = SPEED_5;
+    setServoSpeed(current_speed);
+    Serial.print("Speed Servo: "); Serial.println(current_speed);
     
    }else if (command.equals("S6")){
     Serial.print("Speed set to "); Serial.println(SPEED_6);
+    currentState = DRIVING;
     current_speed = SPEED_6;
+    setServoSpeed(current_speed);
+    Serial.print("Speed Servo: "); Serial.println(current_speed);
     
    }else if (command.equals("XX")){
     Serial.println("Command entered was XX.");

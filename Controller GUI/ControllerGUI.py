@@ -388,8 +388,9 @@ def parse_dataLog(response):
     I_inst = float(values[0])             # current in mA
     V_inst = float(values[1])             # voltage in V
     P_inst = I_inst * V_inst              # power in mW
-    S_inst = state_map[str(values)]
-    S_inst = state_map.get(values[2].strip(), "UNKNOWN")          # state enumeration
+    S_inst = "foo"
+    #S_inst = state_map[str(values)]
+    #S_inst = state_map.get(values[2].strip(), "UNKNOWN")          # state enumeration
     v_cap = float(values[3])
 
     # TODO: Scale v_cap back to its normal value

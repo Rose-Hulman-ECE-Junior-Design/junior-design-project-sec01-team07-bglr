@@ -44,12 +44,13 @@
 #define SPEED_MIN_DUTY            350 
 #define SPEED_MAX_INC             65
 
+#define SPEED_STOP                220
 #define SPEED_1                   240           // low speed (duty cycle)
-#define SPEED_2                   260
-#define SPEED_3                   280           // medium speed
-#define SPEED_4                   300
-#define SPEED_5                   320           
-#define SPEED_6                   350           // high speed (duty cycle)
+#define SPEED_2                   250
+#define SPEED_3                   260           // medium speed
+#define SPEED_4                   270
+#define SPEED_5                   290           
+#define SPEED_6                   310           // high speed (duty cycle)
 
 #define THETA_TARGET              0.0
 #define BT_BUFFER_SIZE            255

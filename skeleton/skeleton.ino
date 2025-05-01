@@ -14,7 +14,7 @@ void setup() {
   //initialize all devices
   initSerialMonitor();
   initHUSKYLENS();
-  SerialBT.begin("CurrentHogs_ESP32_SPP_Device");       // This is the Bluetooth device name
+  SerialBT.begin("CurrentHogs_ESP32_SPP_Device_SIMONI");       // This is the Bluetooth device name
   Serial.println("Bluetooth SPP Started. Pair your device.");
   initINA219();
   initSteeringServo();
@@ -45,13 +45,11 @@ void loop() {
   switch (currentState){
     case IDLE:
       //turn off the motors
-      ledcWrite(SPEED_SERVO, 0);
       break;
       
     case DRIVING:
       steeringAngle = calculateSteeringAngle();
       setSteeringAngle(STEERING_CENTER + steeringAngle);
-      setServoSpeed(current_speed);
       break;
       
     case RECHARGING:
