@@ -269,6 +269,7 @@ float calculateSteeringAngle(){
 //   prev_error = error;
    
    return Kp1 * angle_error - Kp2 * center_error;
+   //return 1.5 * angle_error - 0.9 * center_error;
 
    //TODO:
    //make sure the returned steering angle does not exceed servo range

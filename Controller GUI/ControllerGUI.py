@@ -3,19 +3,54 @@ import csv
 import serial
 import time
 import threading
+import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from PyQt6.QtWidgets import QApplication, QWidget, QRadioButton, QLabel, QPushButton, QDoubleSpinBox, QLineEdit, QVBoxLayout, QFileDialog, QProgressBar, QGridLayout
 from PyQt6.QtCore import Qt, QTimer
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 
+""" 
+
+ControllerGUI.py
+
+ESP32 Vehicle Controller GUI
+
+Features: 
+
+Main Window allows the user to choose between pulling up the Run Viewer 
+or the Log Viewer. It also prompts the user to select a file to which 
+data will be saved to.
+
+Run Viewer allows the user to control the vehicle during a run. User may:
+- start the vehicle by pushing a button
+- stop the vehicle by pushing a button
+- select vehicle speed by selecting a radio button
+- modify controller parameters by inputting 
+- view the amount of time remaning in the run
+- view the vehicle's current state
+- view the vehicle's current power data
+
+Log Viewer allows the user to see the vehicle's power data in plot form.
+User may select which .csv data file they want to view. Window displays:
+- voltage vs time plot
+- current vs time plot
+- power vs time plot
+- energy vs time plot
+- total energy consumed by vehicle
+- total energy regained during the recharging period
+- average power
+
+Author: CKG
+
+"""
+
 
 # GUI VARIABLES ======================================================================================================
 WINDOW_WIDTH = 1000
 WINDOW_HEIGHT = 800
 
-data_file = "temp2.csv" #filepath to .csv file where data will be stored
-
+data_file = "temp.csv" #filepath to .csv file where data will be stored
 
 V_inst = 0
 I_inst = 0
@@ -27,16 +62,12 @@ log_num = 0
 
 speed = 0
 
-
 state_map = {
     0: "IDLE",
     1: "DRIVING",
     2: "CHARGING",
     3: "COMPLETE"
 }
-
-powerSupply_capacitance = 100   #
-
 
 # BLUETOOTH VARIABLES ================================================================================================
 port = 'COM3'
@@ -54,6 +85,8 @@ I_MAX = 1300
 P_MAX = V_MAX * I_MAX
 E_MAX = 300
 
+powerSupply_capacitance = 100   #
+
 RECHARGING_PERIOD = 45      # recharging period, seconds
 FIRST_DRIVING_PERIOD = 60
 SECOND_DRIVING_PERIOD = 30
@@ -64,56 +97,81 @@ SECOND_DRIVING_PERIOD = 30
 class LogViewer(QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Power Log Viewer")
+        self.setWindowTitle("Power Log Plot Viewer")
         self.resize(WINDOW_WIDTH, WINDOW_HEIGHT)
 
         self.plot_button = QPushButton("Plot")
         self.plot_button.clicked.connect(self.plotPowerLog)
         self.canvas = FigureCanvas(plt.Figure(figsize=(8, 6)))
         
-        (tot_energy_spent, tot_energy_gained) = calculateEnergyUsage(data_file)
+        (tot_energy_spent, tot_energy_gained, avg_power) = calculateEnergyUsage(data_file)
         
         self.energy_spent_label = QLabel("Total Energy Spent: " + str(tot_energy_spent) + " J")
         self.energy_gained_label = QLabel("Total Energy Gained: " + str(tot_energy_gained) + " J")
+        self.avg_power_label = QLabel("Average Power: " + str(avg_power) + " mW")
         
+        fig = self.plotPowerLog()
+        
+        canvas = FigureCanvas(fig)
+        self.layout.addWidget(canvas)
+         
         layout = QVBoxLayout()
         layout.addWidget(self.plot_button)
         layout.addWidget(self.canvas)
         layout.addWidget(self.energy_spent_label)
         layout.addWidget(self.energy_gained_label)
+        layout.addWidget(self.avg_power_label)
         
         self.setLayout(layout)
         
+        self.setWindowTitle("Power Log Plot Viewer")
+        self.setMinimumSize(WINDOW_WIDTH, WINDOW_HEIGHT)
+        
+
+                
     def plotPowerLog(self):
         print("Plotting Power Log")
-        #TODO: implement
         # Open file picker
         file_dialog = QFileDialog()
         file_path, _ = file_dialog.getOpenFileName(self, "Select a CSV file", "", "CSV Files (*.csv)")
 
-        if file_path:
-            # Read CSV
-            df = pd.read_csv(file_path)
+        if not file_path:
+            print("No file was selected.")
+            return
+        
+        # Load and process data
+        df = pd.read_csv(data_file)
+        df['Time (s)'] = df['Log Number'] * 0.5         # convert time axis
 
-            # Parse 'Time' column as datetime
-            df['Time'] = pd.to_datetime(df['Time'])
+        # Identify RECHARGE section
+        recharge_mask = df['State'] == 'RECHARGE'
+        if recharge_mask.any():
+            reacharge_start = df['Time (s)'][recharge_mask].iloc[0]
+            recharge_end = df['Time (s)'][recharge_mask].iloc[-1]
+        else:
+            recharge_start = recharge_end = None
 
-            # Set up plotting
-            ax = self.canvas.figure.subplots()
-            ax.clear()
+        # Create matplotlib Figure and Axes
+        fig, axs = plt.subplots(4, 1, figsize=(12, 8), sharex=True)
+        fig.tight_layout(pad=3.0)
 
-            # Plot Voltage, Current, and Power on the same graph
-            ax.plot(df['Time'], df['Voltage'], label='Voltage (V)', marker='o')
-            ax.plot(df['Time'], df['Current'], label='Current (mA)', marker='x')
-            ax.plot(df['Time'], df['Power'], label='Power mW)', marker='s')
+        plot_vars = ['Voltage (V)', 'Current (mA)', 'Power (mW)', 'Energy (J)']
+        colors = ['blue', 'green', 'red', 'purple']
 
-            ax.set_title("Voltage, Current, Power Over Time")
-            ax.set_xlabel("Time")
-            ax.set_ylabel("Values")
-            ax.legend()
-            ax.grid(True)
+        for i, (var, color) in enumerate(zip(plot_vars, colors)):
+            axs[i].plot(df['Time (s)'], df[var], label=var, color=color)
+            if recharge_start is not None:
+                axs[i].axvspan(recharge_start, recharge_end, color='orange', alpha=0.3, label='RECHARGE')
+            axs[i].set_ylabel(var)
+            axs[i].grid(True)
+            axs[i].legend()
 
-            self.canvas.draw()
+        axs[-1].set_xlabel("Time (s)")
+
+        # Embed the plot in the GUI
+       
+        
+        return fig
 # ===================================================================================================================      
             
 # ===================================================================================================================
@@ -377,19 +435,21 @@ class MainWindow(QWidget):
         
 # ==================================================================================================================
 # GUI FUNCTIONS ====================================================================================================
+
+# Send START command to vehicle.
 def send_START():
     print("Sending START to vehicle.")
     send_message("Start")
 
+# Send STOP command to vehicle.
 def send_STOP():
     print("Sending STOP to vehicle.")
     send_message("Stop")
-    
-def update_speed():
-    print("Sending Speed to vehicle.")
-    #TODO: pull desired parameter from GUI
-    send_message("S1")
 
+"""
+Send a command to the vehicle.
+Input - command string
+"""
 def send_message(command):
     global bluetooth_serial, serial_lock
     print("Sending: " + command)
@@ -404,30 +464,59 @@ def send_message(command):
         print("Error: Serial port is not open.")
         return
 
-        
-# ==============================================================================
-#=========================================================================================
+# ===============================================================================================================
+# ===============================================================================================================
 
-# 
+""""
+Extracts data from a .csv file and calculates
+
+- the total energy consumed during the driving periods
+- the total energy regained during the recharging period
+- the average power used by the vehicle
+
+Inputs - data filepath
+Outputs - see parameters above
+
+"""
 def calculateEnergyUsage(filepath):
-    # TODO: implement
+    # TODO: implement correctly
     total_energy_spent = 10
     total_energy_regained = 2
+    avg_power = 3
     
-    return total_energy_spent, total_energy_regained
+    #TODO: compare the results between doing the power integration and 
+    # subtracting starting vs ending instantaneous power supply energy
+    
+    
+    df = pd.read_csv(data_file)           # read the csv file
+    
+    power = df["Power (mW)"].to_numpy()         # extract the power vector
+    time = 0.5 * df["Log Number"].to_numpy()    # extract the time vector
+    
+    charging_df = df[df['State'] != 'CHARGING']
+    power_re = charging_df["Power (mW)"].to_numpy()         # extract the power vector
+    time_re = 0.5 * charging_df["Log Number"].to_numpy()    # extract time vector
+    
+    # Numerical integration using the trapezoidal rule
+    energy = np.trapezoid(power, time)  # returns energy in joules
+    
+    return total_energy_spent, total_energy_regained, avg_power
 
+"""Writes column names to the .csv for easier processing. """
 def initialize_csv(filepath):
     with open(filepath, mode="w", newline="") as file:
         writer = csv.writer(file)
         writer.writerow(["Log Number", "Voltage (V)", "Current (mA)", "Power (mW)", "Energy (J)", "State"])
         
         
-""" Separate the numbers out from the response string"""
-""" Separate the numbers out from the response string"""
+""" 
+Extracts individual values from the serial packet received, updates global 
+variables, and logs the data into the .csv file.
+"""
 def parse_dataLog(response):
     global I_inst, V_inst, P_inst, S_inst, E_inst, add_to_log, log_num, state_map
     
-    values = response.split(":")
+    values = response.split(":")          # extract individual values from the serial packet
     
     I_inst = float(values[0])             # current in mA
     V_inst = float(values[1])             # voltage in V
@@ -455,14 +544,18 @@ def parse_dataLog(response):
         log_num = log_num + 1
     
 
-""" Append row of collected data to .csv file"""
+""" 
+Append row of collected data to .csv file
+Inputs - filepath to desired csv
+         row data to be appended
+"""
 def add_to_csv(filepath, row_data):
     """Appends a list of values as a new row into the given CSV file."""
     with open(filepath, mode="a", newline="") as file:  # "a" = append mode
         writer = csv.writer(file)
         writer.writerow(row_data)
 
-""" Reads power data logs from ESP32"""
+""" Continuously reads power data logs from ESP32"""
 def handle_Rx():
     print("Starting Rx thread.")
     global bluetooth_serial, serial_lock
@@ -490,20 +583,21 @@ def handle_Rx():
             return
         
         
-
+# Start the Rx Thread
+# this is run before we start the GUI
 def start_Rx_thread():
     rx_thread = threading.Thread(target=handle_Rx, daemon=True) #run in the background
     rx_thread.start()
     
     
-
+# ======================================================================================
+# ======================== EXECUTION LOOP ==============================================
 
 # Establish Bluetooth Connection =======================================================
 try:
     #attempt to establish a serial connection
     #bluetooth_serial = serial.Serial(port, baud_rate)
     bluetooth_serial = serial.Serial(port=port, baudrate=baud_rate, timeout=1)
-    print(bluetooth_serial.name)
     print(f"Connected to port {port} at {baud_rate} baud.")
     
     # If Bluetooth Connection is properly established, start Rx thread and run the GUI
@@ -513,10 +607,6 @@ try:
     window = MainWindow()
     window.show()
     sys.exit(app.exec())
-    print("Set up the GUI")
-        
-
-
         
 except serial.SerialException as e:
     print(f"Error: {e}")
