@@ -22,7 +22,7 @@ Next, go back to Bluetooth & Other Devices, scroll down to Related Settings, and
 
 What are COM ports? https://www.serial-over-ethernet.com/serial-to-ethernet-guide/what-is-com-port/
 
-#### Section 2 - The Python GUI
+#### Section 2 - Installing Python
 The Vehicle Controller GUI (VC-GUI) is an app run by a Python script. Make sure you have Python 3.10.11 and the following packages installed:
 
 pandas
@@ -34,27 +34,28 @@ Any version of Python 3 should work. To install a package, open up your Command 
 
 pip install pandas
 
-
 How to install Python:
 https://www.geeksforgeeks.org/how-to-install-python-on-windows/
 
 How to install a Python package:
 https://packaging.python.org/en/latest/tutorials/installing-packages/
 
+#### Section 3 - Using the GUI
 You should now have Python up and running. But before we can run our app, we need to make a small change. Open ControllerGUI.py using your choice of editor (you can legit open this with Notepad). Near the top of the file, look for the Bluetooth Variables section. Change the variable port to whichever COM Port your ESP32 Vehicle is connected to (remember? from Section 1?). For example, if my device had connected on COM Port 9, I would change this line to
 
 port = 'COM9'
 
 Feel free to check out the other parameters and the rest of the code, but do not make any changes (or else). Now we are ready to roll.
 
-Open your file explorer in whichever location your repository is located. In the file explorer, right-click
-To run the VC-GUI, enter the following line into the Command Terminal
+Open your file explorer in whichever location your repository is located. In the file explorer, click the 
 
 python3 ControllerGUI.py
 
 You should see something like the following line printed to the Command Terminal if everything connected properly.
 
 Connected to port COM9 at 115200 baud.
+
+The main window will display, and the VC-GUI is ready to be used.
 
 ### Arduino installation
 -	Go to the [Arduino website](https://www.arduino.cc/en/software/) and select Download Options > Windows 10+ or appropriate operating system
