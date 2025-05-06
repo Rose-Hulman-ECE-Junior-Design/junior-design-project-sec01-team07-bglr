@@ -25,10 +25,10 @@ What are COM ports? https://www.serial-over-ethernet.com/serial-to-ethernet-guid
 #### Section 2 - Installing Python
 The Vehicle Controller GUI (VC-GUI) is an app run by a Python script. Make sure you have Python 3.10.11 and the following packages installed:
 
-pandas
-matplotlib
-PyQt6
-Pyserial
+- pandas
+- matplotlib
+- PyQt6
+- Pyserial
 
 Any version of Python 3 should work. To install a package, open up your Command Terminal and type 'pip install my_package' For example:
 
