@@ -79,8 +79,10 @@
 #define ADC_MAX_VOLTAGE           3.3
 
 
-#define DEFAULT_KP1               1.2
-#define DEFAULT_KP2               0.5
+#define DEFAULT_KP1_L             1.5               //default Kp parameters for Low Speeds (Speeds 1-4)
+#define DEFAULT_KP2_L             0.9
+#define DEFAULT_KP1_H             1.0               //default Kp parameters for High Speeds (Speeds 5-6)
+#define DEFAULT_KP2_H             2.0
 //============================================================================
 
 // GLOBAL VARIABLES (Declarations Only) ======================================

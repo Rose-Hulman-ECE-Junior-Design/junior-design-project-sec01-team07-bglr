@@ -18,8 +18,9 @@
 #include "ESP32_Vehicle.h"
 
 
-float Kp1 = DEFAULT_KP1;                // proportional angle error parameter            
-float Kp2 = DEFAULT_KP2;                // proportional center error parameter
+float Kp1 = DEFAULT_KP1_L;                // proportional angle error parameter            
+float Kp2 = DEFAULT_KP2_L;                // proportional center error parameter
+
 //float Kd, Ki = 1;
 //float dt, integral, derivative = 2;
 //float prev_error = 0;
@@ -34,8 +35,8 @@ float busvoltage = 0;
 float current_mA = 0;
 float loadvoltage = 0;
 float power_mW = 0;
-
-extern int current_speed = SPEED_3;
+  
+extern int current_speed = SPEED_3;       //initialize to Speed 3
 
 VehicleState currentState = IDLE;
 int dataLog_num;
@@ -365,43 +366,49 @@ void parseGUICommand(){
        Serial.print("Speed set to "); Serial.println(SPEED_1);
        currentState = DRIVING;
        current_speed = SPEED_1;
+       Kp1 = DEFAULT_KP1_L;
+       Kp2 = DEFAULT_KP2_L;
        setServoSpeed(current_speed);
-       Serial.print("Speed Servo: "); Serial.println(current_speed);
     
    }else if (command.equals("S2")){
        Serial.print("Speed set to "); Serial.println(SPEED_2);
        currentState = DRIVING;
        current_speed = SPEED_2;
+       Kp1 = DEFAULT_KP1_L;
+       Kp2 = DEFAULT_KP2_L;
        setServoSpeed(current_speed);
-       Serial.print("Speed Servo: "); Serial.println(current_speed);
     
    }else if (command.equals("S3")){
        Serial.print("Speed set to "); Serial.println(SPEED_3);
        currentState = DRIVING;
        current_speed = SPEED_3;
+       Kp1 = DEFAULT_KP1_L;
+       Kp2 = DEFAULT_KP2_L;       
        setServoSpeed(current_speed);
-       Serial.print("Speed Servo: "); Serial.println(current_speed);
     
    }else if (command.equals("S4")){
       Serial.print("Speed set to "); Serial.println(SPEED_4);
       currentState = DRIVING;
       current_speed = SPEED_4;
+      Kp1 = DEFAULT_KP1_L;
+      Kp2 = DEFAULT_KP2_L;
       setServoSpeed(current_speed);
-      Serial.print("Speed Servo: "); Serial.println(current_speed);
     
    }else if (command.equals("S5")){
       Serial.print("Speed set to "); Serial.println(SPEED_5);
       currentState = DRIVING;
       current_speed = SPEED_5;
+      Kp1 = DEFAULT_KP1_H;
+      Kp2 = DEFAULT_KP2_H;
       setServoSpeed(current_speed);
-      Serial.print("Speed Servo: "); Serial.println(current_speed);
     
    }else if (command.equals("S6")){
       Serial.print("Speed set to "); Serial.println(SPEED_6);
       currentState = DRIVING;
       current_speed = SPEED_6;
+      Kp1 = DEFAULT_KP1_H;
+      Kp2 = DEFAULT_KP2_H;
       setServoSpeed(current_speed);
-      Serial.print("Speed Servo: "); Serial.println(current_speed);
     
    }else if (command.equals("RECHARGE")){
       currentState = RECHARGING;
@@ -463,13 +470,18 @@ void sendDataLog(){
   switch (currentState){
   case IDLE:  
     stateChar = '0';
+    break;
   case DRIVING:
     stateChar = '1';
+    break;
   case RECHARGING:
     stateChar = '2';
+    break;
   default:
     stateChar = '0';
+    break;
   }
+
 
   //concatenate serial package of data, do some string manipulation
   char package[FLOAT_BUFF_SIZE*3 + 3 + 1 + 1]; // Adjust size as needed
