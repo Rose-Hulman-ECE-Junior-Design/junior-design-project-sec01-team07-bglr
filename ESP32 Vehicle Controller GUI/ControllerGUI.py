@@ -149,7 +149,7 @@ class LogViewer(QWidget):
         colors = ['blue', 'green', 'red', 'purple']
         
         # Identify RECHARGE section
-        recharge_mask = df['State'] == 'RECHARGE'
+        recharge_mask = df['State'] == 'CHARGING'
         if recharge_mask.any():
             recharge_indices = df.index[recharge_mask]
             recharge_start = df['Time (s)'].iloc[recharge_indices[0]]
@@ -161,7 +161,7 @@ class LogViewer(QWidget):
             if var in df.columns:
                 axs[i].plot(df['Time (s)'], df[var], label=var, color=color)
                 if recharge_start is not None:
-                    axs[i].axvspan(recharge_start, recharge_end, color='orange', alpha=0.3, label='RECHARGE')
+                    axs[i].axvspan(recharge_start, recharge_end, color='green', alpha=0.3, label='RECHARGE')
                 axs[i].set_ylabel(var)
                 axs[i].grid(True)
                 axs[i].legend()
@@ -489,7 +489,6 @@ def calculateEnergyUsage(filepath):
     
     #TODO: compare the results between doing the power integration and 
     # subtracting starting vs ending instantaneous power supply energy
-    
     
     df = pd.read_csv(data_file)           # read the csv file
     
