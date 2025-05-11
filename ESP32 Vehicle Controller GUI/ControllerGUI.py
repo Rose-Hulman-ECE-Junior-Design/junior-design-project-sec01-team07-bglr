@@ -87,10 +87,17 @@ E_MAX = 300
 
 powerSupply_capacitance = 100   #
 
-RECHARGING_PERIOD = 45      # recharging period, seconds
-FIRST_DRIVING_PERIOD = 60
-SECOND_DRIVING_PERIOD = 30
 
+RECHARGING_PERIOD = 45      # recharging period, seconds
+FIRST_DRIVING_PERIOD = 90
+SECOND_DRIVING_PERIOD = 45
+
+first_timer_done = False      # first driving period finished
+second_timer_done = False     # recharging period finished
+third_timer_done = False      # second driving period finished
+
+time_remaining = FIRST_DRIVING_PERIOD
+timer_tick = 0.2
 
 # ===================================================================================================================
 # ===================================================================================================================
@@ -317,24 +324,54 @@ class RunViewer(QWidget):
     # updates the RunViewer window graphics every 200 ms
     def update_run_graphics(self):
     # Update the progress bars and labels based on the latest voltage and current
-        global FIRST_DRIVING_PERIOD, timerDone
+        global time_remaining, timerDone, timer_tick, first_timer_done, second_timer_done, third_timer_done, RECHARGING_PERIOD, SECOND_DRIVING_PERIOD
          
         self.voltage_label.setText("Voltage: " + str(V_inst) + " V")
         self.current_label.setText("Current: " + str(I_inst) + " mA")
         self.power_label.setText("Power: " + str(P_inst)[:7] + " mW")
         self.energy_label.setText("Energy: " + str(E_inst) + " J")
         self.state_label.setText(S_inst)
-        self.time_label.setText("Time Remaining: " + "{:.2f}".format(FIRST_DRIVING_PERIOD))
+        self.time_label.setText("Time Remaining: " + "{:.2f}".format(time_remaining))
         
-        self.voltage_progress.setValue(int((V_inst / V_MAX) * 100))  # Set voltage as percentage (max 15V)
+        self.voltage_progress.setValue(int(((V_inst - 7) / 1) * 100))  # Set voltage as percentage (max 15V)
         self.current_progress.setValue(int((I_inst / I_MAX) * 100))  # Set current as percentage (max 5A)
         self.power_progress.setValue(int((P_inst / P_MAX) * 100))
         self.energy_progress.setValue(int((E_inst / E_MAX) * 100))
         
-        FIRST_DRIVING_PERIOD =  FIRST_DRIVING_PERIOD - 0.2  #timer tick (200ms)
+        time_remaining =  time_remaining - timer_tick  #timer tick (200ms)
         
-        if FIRST_DRIVING_PERIOD <= 0:
-            timerDone = True
+        if time_remaining <= 0:
+            
+            if first_timer_done & second_timer_done:
+                third_timer_done = True
+                print("All timers done. Exiting...")
+                self.close()
+            
+            if (first_timer_done) & (not second_timer_done) :
+                second_timer_done = True
+                # disable the control buttons
+                self.start_button.setEnabled(True)
+                self.stop_button.setEnabled(True)
+                
+                send_STOP()             # kick the vehicle out of Recharging mode
+                time_remaining = SECOND_DRIVING_PERIOD
+                print("Setting time remaining to SECOND_DRIVING_PERIOD")
+            
+            if (not first_timer_done):
+                first_timer_done = True
+                send_message("RECHARGE")        # kick the vehicle into recharging mode
+                
+                # disable the control buttons
+                self.start_button.setEnabled(False)
+                self.stop_button.setEnabled(False)
+                
+                time_remaining = RECHARGING_PERIOD
+                
+                print("Setting time remaining to RECHARGING_PERIOD")
+                
+
+                
+
     
     def enter_Recharge(self):
         #TODO: restart the timer for 45 seconds
