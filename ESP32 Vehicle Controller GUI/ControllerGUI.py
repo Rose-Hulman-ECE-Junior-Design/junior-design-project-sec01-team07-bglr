@@ -98,80 +98,83 @@ class LogViewer(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Power Log Plot Viewer")
-        self.resize(WINDOW_WIDTH, WINDOW_HEIGHT)
+        self.setMinimumSize(WINDOW_WIDTH, WINDOW_HEIGHT)
 
-        self.plot_button = QPushButton("Plot")
+        # UI elements
+        self.plot_button = QPushButton("Plot CSV Data")
         self.plot_button.clicked.connect(self.plotPowerLog)
-        self.canvas = FigureCanvas(plt.Figure(figsize=(8, 6)))
-        
-        (tot_energy_spent, tot_energy_gained, avg_power) = calculateEnergyUsage(data_file)
-        
-        self.energy_spent_label = QLabel("Total Energy Spent: " + str(tot_energy_spent) + " J")
-        self.energy_gained_label = QLabel("Total Energy Gained: " + str(tot_energy_gained) + " J")
-        self.avg_power_label = QLabel("Average Power: " + str(avg_power) + " mW")
-        
-        fig = self.plotPowerLog()
-        
-        canvas = FigureCanvas(fig)
-        self.layout.addWidget(canvas)
-         
+        self.canvas = FigureCanvas(plt.Figure(figsize=(10, 6)))
+
+        self.energy_spent_label = QLabel("Total Energy Spent: N/A")
+        self.energy_gained_label = QLabel("Total Energy Gained (RECHARGE): N/A")
+        self.avg_power_label = QLabel("Average Power: N/A")
+
+        # Layout
         layout = QVBoxLayout()
         layout.addWidget(self.plot_button)
         layout.addWidget(self.canvas)
         layout.addWidget(self.energy_spent_label)
         layout.addWidget(self.energy_gained_label)
         layout.addWidget(self.avg_power_label)
-        
         self.setLayout(layout)
         
-        self.setWindowTitle("Power Log Plot Viewer")
-        self.setMinimumSize(WINDOW_WIDTH, WINDOW_HEIGHT)
-        
 
-                
+    """ Plots the voltage, current, power, and energy on four subplots given a .csv data file."""      
     def plotPowerLog(self):
-        print("Plotting Power Log")
-        # Open file picker
-        file_dialog = QFileDialog()
-        file_path, _ = file_dialog.getOpenFileName(self, "Select a CSV file", "", "CSV Files (*.csv)")
-
+        file_path, _ = QFileDialog.getOpenFileName(self, "Select a CSV file", "", "CSV Files (*.csv)")
         if not file_path:
-            print("No file was selected.")
+            print("No file selected.")
             return
-        
-        # Load and process data
-        df = pd.read_csv(data_file)
-        df['Time (s)'] = df['Log Number'] * 0.5         # convert time axis
 
+        try:
+            df = pd.read_csv(file_path)
+        except Exception as e:
+            print(f"Failed to read CSV: {e}")
+            return
+
+        # Prepare data
+        df['Time (s)'] = df['Log Number'] * 0.5  # or however time is calculated
+        recharge_mask = df['State'] == 'RECHARGE'
+        recharge_start = df['Time (s)'][recharge_mask].iloc[0] if recharge_mask.any() else None
+        recharge_end = df['Time (s)'][recharge_mask].iloc[-1] if recharge_mask.any() else None
+
+        # Clear old plots
+        fig = self.canvas.figure
+        fig.clear()
+        axs = fig.subplots(4, 1, sharex=True)
+        fig.tight_layout(pad=3.0)
+
+        # Plot variables
+        plot_vars = ['Voltage (V)', 'Current (mA)', 'Power (mW)', 'Energy (J)']
+        colors = ['blue', 'green', 'red', 'purple']
+        
         # Identify RECHARGE section
         recharge_mask = df['State'] == 'RECHARGE'
         if recharge_mask.any():
-            reacharge_start = df['Time (s)'][recharge_mask].iloc[0]
-            recharge_end = df['Time (s)'][recharge_mask].iloc[-1]
+            recharge_indices = df.index[recharge_mask]
+            recharge_start = df['Time (s)'].iloc[recharge_indices[0]]
+            recharge_end = df['Time (s)'].iloc[recharge_indices[-1]]
         else:
             recharge_start = recharge_end = None
 
-        # Create matplotlib Figure and Axes
-        fig, axs = plt.subplots(4, 1, figsize=(12, 8), sharex=True)
-        fig.tight_layout(pad=3.0)
-
-        plot_vars = ['Voltage (V)', 'Current (mA)', 'Power (mW)', 'Energy (J)']
-        colors = ['blue', 'green', 'red', 'purple']
-
         for i, (var, color) in enumerate(zip(plot_vars, colors)):
-            axs[i].plot(df['Time (s)'], df[var], label=var, color=color)
-            if recharge_start is not None:
-                axs[i].axvspan(recharge_start, recharge_end, color='orange', alpha=0.3, label='RECHARGE')
-            axs[i].set_ylabel(var)
-            axs[i].grid(True)
-            axs[i].legend()
+            if var in df.columns:
+                axs[i].plot(df['Time (s)'], df[var], label=var, color=color)
+                if recharge_start is not None:
+                    axs[i].axvspan(recharge_start, recharge_end, color='orange', alpha=0.3, label='RECHARGE')
+                axs[i].set_ylabel(var)
+                axs[i].grid(True)
+                axs[i].legend()
 
         axs[-1].set_xlabel("Time (s)")
+        self.canvas.draw()
 
-        # Embed the plot in the GUI
-       
+        # Update stats
+        total_energy, recharge_energy, avg_power = calculateEnergyUsage(file_path)
+        self.energy_spent_label.setText(f"Total Energy Spent: {total_energy:.2f} J")
+        self.energy_gained_label.setText(f"Total Energy Gained (RECHARGE): {recharge_energy:.2f} J")
+        self.avg_power_label.setText(f"Average Power: {avg_power:.2f} mW")
         
-        return fig
 # ===================================================================================================================      
             
 # ===================================================================================================================
