@@ -360,6 +360,7 @@ class RunViewer(QWidget):
             
             if first_timer_done & second_timer_done:
                 third_timer_done = True
+                send_STOP()
                 print("All timers done. Exiting...")
                 self.close()
             
