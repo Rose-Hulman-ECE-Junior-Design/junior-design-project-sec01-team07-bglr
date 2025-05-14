@@ -233,8 +233,22 @@ class RunViewer(QWidget):
         self.kp2_spin.setSingleStep(0.1)
         self.kp2_spin.setPrefix("Kp2: ")
         
+        self.ki_spin = QDoubleSpinBox(self)
+        self.ki_spin.setRange(0.0, 5.0)
+        self.ki_spin.setDecimals(3)
+        self.ki_spin.setSingleStep(0.1)
+        self.ki_spin.setPrefix("Ki: ")
+
+        self.kd_spin = QDoubleSpinBox(self)
+        self.kd_spin.setRange(0.0, 5.0)
+        self.kd_spin.setDecimals(3)
+        self.kd_spin.setSingleStep(0.1)
+        self.kd_spin.setPrefix("Kd: ")
+        
         self.kp1_spin.valueChanged.connect(self.kp1_changed)
         self.kp2_spin.valueChanged.connect(self.kp2_changed)
+        self.ki_spin.valueChanged.connect(self.ki_changed)
+        self.kd_spin.valueChanged.connect(self.kd_changed)
 
         # Set up the timer to call update_run_graphics every 200ms
         timer = QTimer(self)
@@ -318,6 +332,8 @@ class RunViewer(QWidget):
         
         layout.addWidget(self.kp1_spin, 7, 0, 1, 1)
         layout.addWidget(self.kp2_spin, 7, 1, 1, 1)
+        layout.addWidget(self.ki_spin, 8, 0, 1, 1)
+        layout.addWidget(self.kd_spin, 8, 1, 1, 1)
         
         self.setLayout(layout)
         
@@ -370,9 +386,6 @@ class RunViewer(QWidget):
                 print("Setting time remaining to RECHARGING_PERIOD")
                 
 
-                
-
-    
     def enter_Recharge(self):
         #TODO: restart the timer for 45 seconds
         send_message("RECHARGE")
@@ -382,7 +395,12 @@ class RunViewer(QWidget):
 
     def kp2_changed(self, value):
         send_message(f"Kp2={value:.3f}")
-        
+
+    def ki_changed(self, value):
+        send_message(f"Ki={value:.3f}")
+    
+    def kd_changed(self, value):
+        send_message(f"Kd={value:.3f}")
     # Updates Vehicle speed.
     def update_speed(self, speednum):
         match speednum:

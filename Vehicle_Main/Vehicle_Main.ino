@@ -48,6 +48,7 @@ void loop() {
       break;
       
     case DRIVING:
+      Serial.println("AQUI PENDEJA");
       steeringAngle = calculateSteeringAngle();
       //Serial.print("Steering angle: "); Serial.println(steeringAngle);
       setSteeringAngle(STEERING_CENTER + steeringAngle);

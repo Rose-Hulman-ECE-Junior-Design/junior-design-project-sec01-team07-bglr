@@ -20,10 +20,16 @@
 
 float Kp1 = DEFAULT_KP1_L;                // proportional angle error parameter            
 float Kp2 = DEFAULT_KP2_L;                // proportional center error parameter
+float Ki = DEFAULT_KI;
+float Kd = DEFAULT_KD;
+float dt = TIME_STEP * 0.000001;          // time step, 100 us
+float integral = 0; 
+float derivative = 0;
+float prev_error = 0;
 
 //float Kd, Ki = 1;
 //float dt, integral, derivative = 2;
-//float prev_error = 0;
+
 
 char BT_buffer_incoming[BT_BUFFER_SIZE];
 
@@ -255,26 +261,42 @@ float calculateSteeringAngle(){
 
    //find the midpoint of the line, compare to the center of the screen
    float center_error = ((float)(result.xOrigin + result.xTarget))/2 - HUSKYLENS_X_CENTER;
-   
-   //Serial.print("Error angle (deg)"); Serial.println(error);
 
+//   float P = Kp1 * angle_error - Kp2 * center_error;
+//   
+////   Unimplemented PID controller
+////   float P = Kp * error;
+//     integral += angle_error * dt;
+//     float I = Ki * integral;
+//
+////   derivative = (error - prev_error) / dt;
+//     derivative = (error - prev_error) / dt;
+//     float D = Kd * derivative;
+//
+//    prev_error = P + I + D;
+//   
+//   return prev_error;  
 
-//   Unimplemented PID controller
-//   float P = Kp * error;
-//   integral += error * dt;
-//   float I = Ki * integral;
-
-//   derivative = (error - prev_error) / dt;
-//   float D = Kd * derivative;
-
-//   prev_error = error;
-   
-   return Kp1 * angle_error - Kp2 * center_error;
-   //return 1.5 * angle_error - 0.9 * center_error;
-
-   //TODO:
-   //make sure the returned steering angle does not exceed servo range
-  
+// ========== CHAT SOLUTION =================
+// TODO: chat does it based solely on angle error ??
+        // PID control on angle error
+    float error = angle_error; // for clarity
+    
+    integral += error * dt;
+    derivative = (error - prev_error) / dt;
+    
+    float P = Kp * error;
+    float I = Ki * integral;
+    float D = Kd * derivative;
+    
+    float control_signal = P + I + D;
+    
+    // Apply center error bias if desired
+    control_signal -= Kp2 * center_error;
+    
+    prev_error = error; // Save for next iteration
+    
+    return control_signal;
 }
 
 /*
@@ -424,6 +446,18 @@ void parseGUICommand(){
       Kp1 = newVal.toFloat();
       Serial.print("Kp1 set to "); Serial.println(Kp1);
     
+   } else if (command.startsWith("Ki=")){
+
+      String newVal = command.substring(3);   //strip out the first 3 chars
+      Ki = newVal.toFloat();
+      Serial.print("Ki set to "); Serial.println(Ki);
+      
+   } else if (command.startsWith("Kd=")){
+
+      String newVal = command.substring(3);   //strip out the first 3 chars
+      Kd = newVal.toFloat();
+      Serial.print("Kd set to "); Serial.println(Kd);
+      
    }else {
     //Serial.println("Command could not be parsed."); 
    }

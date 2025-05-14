@@ -83,6 +83,10 @@
 #define DEFAULT_KP2_L             0.9
 #define DEFAULT_KP1_H             1.0               //default Kp parameters for High Speeds (Speeds 5-6)
 #define DEFAULT_KP2_H             2.0
+#define DEFAULT_KI                1.0
+#define DAFAULT_KD                1.0
+
+#define TIME_STEP                 100                //time step, microseconds (measured 91, but accounting for extra calculation time)
 //============================================================================
 
 // GLOBAL VARIABLES (Declarations Only) ======================================
