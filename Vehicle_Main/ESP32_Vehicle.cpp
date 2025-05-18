@@ -22,7 +22,11 @@ float Kp1 = DEFAULT_KP1_L;                // proportional angle error parameter
 float Kp2 = DEFAULT_KP2_L;                // proportional center error parameter
 float Ki = DEFAULT_KI;
 float Kd = DEFAULT_KD;
-float dt = TIME_STEP * 0.000001;          // time step, 100 us
+
+//float dt = TIME_STEP * 0.000001;          // time step, 100 us
+//unsigned long lastUpdate = 0;
+//const unsigned long controlInterval = 30;  // ms
+
 float integral = 0; 
 float derivative = 0;
 float prev_error = 0;
@@ -236,31 +240,54 @@ HUSKYLENSResult readHUSKYLENS(){
 }
 
 /*
+ * Clears the PID variables
+ */
+void resetPID() {
+    integral = 0.0;
+    derivative = 0.0;
+    prev_error = 0.0;
+}
+
+// Approximate arctangent using a fast polynomial (valid for small angles)
+float fastAtan(float x) {
+    return x / (1.0f + 0.28f * x * x);
+}
+
+/*
  * Use a P control algorithm to calculate the correct steering angle
  * 
  * Inputs - none
  * Outputs - target steering angle, in degrees, as a float
  */
-float calculateSteeringAngle(){
-    
+float calculateSteeringAngle( float dt){
+
+    if (dt < 0.0001f) return steeringAngle;
+
     HUSKYLENSResult result = readHUSKYLENS();
     
     if (result.command != COMMAND_RETURN_ARROW){  //check if we got a valid arrow object
-       Serial.println("Object unknown!");
+//       Serial.println("Object unknown!")
+       resetPID();
        return steeringAngle;
     }
 
-   if ((result.yTarget - result.yOrigin) == 0){  //make sure we don't accidentally divide by 0
-       Serial.println("Did not get a valid arrow. ");
-       return steeringAngle;
-    }
+   // Calculate Errors
+   float dy = (float)(result.yTarget - result.yOrigin);
+   if (dy == 0) return steeringAngle;
 
-   //find the error angle from the direction of the arrow
-   float r = ((float)(result.xTarget - result.xOrigin) )/ ( (float)(result.yTarget - result.yOrigin));
+   float inv_dy = 1.0f / dy;
+   float r = (float)(result.xTarget - result.xOrigin) * inv_dy;
+   //float r = ((float)(result.xTarget - result.xOrigin) )/ ( (float)(result.yTarget - result.yOrigin));
    float angle_error = THETA_TARGET + ( atan(r) * RAD_TO_DEG );
+   //float angle_error = THETA_TARGET + fastAtan(r) * RAD_TO_DEG;
 
    //find the midpoint of the line, compare to the center of the screen
    float center_error = ((float)(result.xOrigin + result.xTarget))/2 - HUSKYLENS_X_CENTER;
+
+//   // Calculate Time Step
+//   unsigned long currentMicros = micros();
+//   dt = (currentMicros - lastMicros) / 1000000.0;
+//   lastMicros = currentMicros;
 
 //   float P = Kp1 * angle_error - Kp2 * center_error;
 //   
@@ -279,13 +306,14 @@ float calculateSteeringAngle(){
 
 // ========== CHAT SOLUTION =================
 // TODO: chat does it based solely on angle error ??
-        // PID control on angle error
+    // PID control on angle error
     float error = angle_error; // for clarity
     
     integral += error * dt;
+    integral = constrain(integral, -MAX_I_SUM / Ki, MAX_I_SUM / Ki);
     derivative = (error - prev_error) / dt;
     
-    float P = Kp * error;
+    float P = Kp1 * error;
     float I = Ki * integral;
     float D = Kd * derivative;
     
@@ -369,23 +397,25 @@ void parseGUICommand(){
 
   //interpret each command, change state if necessary
   if (command.equals("Start")){
+      resetPID();
       currentState = DRIVING;
       setServoSpeed(current_speed);
-      Serial.println("Vehicle is now in DRIVING state.");
-      Serial.print("Speed Servo: "); Serial.println(current_speed);
+//      Serial.println("Vehicle is now in DRIVING state.");
+//      Serial.print("Speed Servo: "); Serial.println(current_speed);
     
    }else if (command.equals("Stop")){
       currentState = IDLE;
       ledcWrite(SPEED_SERVO, SPEED_STOP);
-      Serial.println("Vehicle is now in IDLE state.");
-      Serial.print("Speed Servo: "); Serial.println(current_speed);
-    
+      setSteeringAngle(STEERING_CENTER);
+  
    } else if (command.equals("Recharge")){
       currentState = RECHARGING;
-      Serial.println("Vehicle is now in RECHARGING state.");
+      setSteeringAngle(STEERING_CENTER);
+      ledcWrite(SPEED_SERVO, SPEED_STOP);
+      //Serial.println("Vehicle is now in RECHARGING state.");
     
    } else if (command.equals("S1")){
-       Serial.print("Speed set to "); Serial.println(SPEED_1);
+       //Serial.print("Speed set to "); Serial.println(SPEED_1);
        currentState = DRIVING;
        current_speed = SPEED_1;
        Kp1 = DEFAULT_KP1_L;
@@ -393,7 +423,7 @@ void parseGUICommand(){
        setServoSpeed(current_speed);
     
    }else if (command.equals("S2")){
-       Serial.print("Speed set to "); Serial.println(SPEED_2);
+       //Serial.print("Speed set to "); Serial.println(SPEED_2);
        currentState = DRIVING;
        current_speed = SPEED_2;
        Kp1 = DEFAULT_KP1_L;
@@ -409,7 +439,7 @@ void parseGUICommand(){
        setServoSpeed(current_speed);
     
    }else if (command.equals("S4")){
-      Serial.print("Speed set to "); Serial.println(SPEED_4);
+      //Serial.print("Speed set to "); Serial.println(SPEED_4);
       currentState = DRIVING;
       current_speed = SPEED_4;
       Kp1 = DEFAULT_KP1_L;
@@ -417,7 +447,7 @@ void parseGUICommand(){
       setServoSpeed(current_speed);
     
    }else if (command.equals("S5")){
-      Serial.print("Speed set to "); Serial.println(SPEED_5);
+      //Serial.print("Speed set to "); Serial.println(SPEED_5);
       currentState = DRIVING;
       current_speed = SPEED_5;
       Kp1 = DEFAULT_KP1_H;
@@ -425,7 +455,7 @@ void parseGUICommand(){
       setServoSpeed(current_speed);
     
    }else if (command.equals("S6")){
-      Serial.print("Speed set to "); Serial.println(SPEED_6);
+      //Serial.print("Speed set to "); Serial.println(SPEED_6);
       currentState = DRIVING;
       current_speed = SPEED_6;
       Kp1 = DEFAULT_KP1_H;
@@ -438,25 +468,25 @@ void parseGUICommand(){
    } else if (command.startsWith("Kp1=")){
       String newVal = command.substring(4);   //strip out the first 4 chars
       Kp1 = newVal.toFloat();
-      Serial.print("Kp1 set to "); Serial.println(Kp1);
+      //Serial.print("Kp1 set to "); Serial.println(Kp1);
     
     
    } else if (command.startsWith("Kp2=")){
       String newVal = command.substring(4);   //strip out the first 4 chars
       Kp1 = newVal.toFloat();
-      Serial.print("Kp1 set to "); Serial.println(Kp1);
+      //Serial.print("Kp1 set to "); Serial.println(Kp1);
     
    } else if (command.startsWith("Ki=")){
 
       String newVal = command.substring(3);   //strip out the first 3 chars
       Ki = newVal.toFloat();
-      Serial.print("Ki set to "); Serial.println(Ki);
+      //Serial.print("Ki set to "); Serial.println(Ki);
       
    } else if (command.startsWith("Kd=")){
 
       String newVal = command.substring(3);   //strip out the first 3 chars
       Kd = newVal.toFloat();
-      Serial.print("Kd set to "); Serial.println(Kd);
+      //Serial.print("Kd set to "); Serial.println(Kd);
       
    }else {
     //Serial.println("Command could not be parsed."); 

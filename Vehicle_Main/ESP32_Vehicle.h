@@ -33,7 +33,7 @@
 #define STEERING_MIN_PW           1             // minimum pulse width, ms
 #define STEERING_MAX_PW           2             // max pulse width, ms
 #define STEERING_RANGE            1
-#define STEERING_MAX_ANGLE        165.0
+#define STEERING_MAX_ANGLE        170.0
 #define STEERING_MIN_ANGLE        25.0
 #define STEERING_CENTER           100.0            // center (straight) steering position, degrees
 
@@ -84,7 +84,9 @@
 #define DEFAULT_KP1_H             1.0               //default Kp parameters for High Speeds (Speeds 5-6)
 #define DEFAULT_KP2_H             2.0
 #define DEFAULT_KI                1.0
-#define DAFAULT_KD                1.0
+#define DEFAULT_KD                1.0
+
+#define MAX_I_SUM                 10                // 10 degrees max integral accumulation
 
 #define TIME_STEP                 100                //time step, microseconds (measured 91, but accounting for extra calculation time)
 //============================================================================
@@ -133,7 +135,7 @@ void initCapacitorPin();
 
 void setSteeringAngle(float angle);
 void setServoSpeed(uint32_t duty);
-float calculateSteeringAngle();
+float calculateSteeringAngle(float dt);
 float calculateServoSpeed();
 
 void readINA219();       
