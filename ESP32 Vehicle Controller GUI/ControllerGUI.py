@@ -211,10 +211,8 @@ class RunViewer(QWidget):
         self.speed2_radio = QRadioButton("Speed 2", self)
         self.speed3_radio = QRadioButton("Speed 3", self)
         self.speed4_radio = QRadioButton("Speed 4", self)
-        self.speed5_radio = QRadioButton("Speed 5", self)
-        self.speed6_radio = QRadioButton("Speed 6", self)
         
-        radio_buttons = [self.speed1_radio, self.speed2_radio, self.speed3_radio, self.speed4_radio, self.speed5_radio, self.speed6_radio]
+        radio_buttons = [self.speed1_radio, self.speed2_radio, self.speed3_radio, self.speed4_radio]
 
         for idx, button in enumerate(radio_buttons, start=1):
             button.toggled.connect(lambda checked, k=idx: self.update_speed(k))
@@ -223,25 +221,25 @@ class RunViewer(QWidget):
         # Create KP Controllers
         self.kp1_spin = QDoubleSpinBox(self)
         self.kp1_spin.setRange(0.0, 5.0)       # Set desired range
-        self.kp1_spin.setDecimals(3)             # Number of decimal places
+        self.kp1_spin.setDecimals(4)             # Number of decimal places
         self.kp1_spin.setSingleStep(0.1)         # Increment step
         self.kp1_spin.setPrefix("Kp1: ")
 
         self.kp2_spin = QDoubleSpinBox(self)
         self.kp2_spin.setRange(0.0, 5.0)
-        self.kp2_spin.setDecimals(3)
+        self.kp2_spin.setDecimals(4)
         self.kp2_spin.setSingleStep(0.1)
         self.kp2_spin.setPrefix("Kp2: ")
         
         self.ki_spin = QDoubleSpinBox(self)
         self.ki_spin.setRange(0.0, 5.0)
-        self.ki_spin.setDecimals(3)
+        self.ki_spin.setDecimals(4)
         self.ki_spin.setSingleStep(0.1)
         self.ki_spin.setPrefix("Ki: ")
 
         self.kd_spin = QDoubleSpinBox(self)
         self.kd_spin.setRange(0.0, 5.0)
-        self.kd_spin.setDecimals(3)
+        self.kd_spin.setDecimals(4)
         self.kd_spin.setSingleStep(0.1)
         self.kd_spin.setPrefix("Kd: ")
         
@@ -327,8 +325,6 @@ class RunViewer(QWidget):
         layout.addWidget(self.speed2_radio, 6, 1, 1, 1)
         layout.addWidget(self.speed3_radio, 6, 2, 1, 1)
         layout.addWidget(self.speed4_radio, 6, 3, 1, 1)
-        layout.addWidget(self.speed5_radio, 6, 4, 1, 1)
-        layout.addWidget(self.speed6_radio, 6, 5, 1, 1)
         
         layout.addWidget(self.kp1_spin, 7, 0, 1, 1)
         layout.addWidget(self.kp2_spin, 7, 1, 1, 1)
