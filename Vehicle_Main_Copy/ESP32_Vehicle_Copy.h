@@ -85,6 +85,7 @@
 #define DEFAULT_KP2_H             2.0
 #define DEFAULT_KI                1.0
 #define DEFAULT_KD                1.0
+#define PID_SAMPLE_TIME           5000             // microseconds
 
 
 

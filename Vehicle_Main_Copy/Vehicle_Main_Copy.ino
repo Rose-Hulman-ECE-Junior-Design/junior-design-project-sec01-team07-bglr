@@ -51,7 +51,6 @@ void loop() {
       break;
       
     case DRIVING:
-      // Skip if dt is very small
       steeringAngle = calculateSteeringAngle();
       //Serial.print("Steering angle: "); Serial.println(steeringAngle);
       setSteeringAngle(STEERING_CENTER + steeringAngle);

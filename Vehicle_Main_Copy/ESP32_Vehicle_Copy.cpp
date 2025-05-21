@@ -27,8 +27,11 @@ float Kd = DEFAULT_KD;
 float angle_error = 0.0;
 float control_output = 0.0;
 float setpoint = 0.0;
+float filtered_angle_error = 0.0;    // declare globally or as a static inside function
+const float alpha = 0.2;              // smoothing factor (0.1 to 0.3 recommended) 
 
 QuickPID pid(&angle_error, &control_output, &setpoint, Kp1, Ki, Kd, QuickPID::Action::direct);
+//pid.SetSampleTimeUs(PID_SAMPLE_TIME);  // 10 ms (default), adjust as needed
 
 
 float integral = 0; 
@@ -250,20 +253,6 @@ HUSKYLENSResult readHUSKYLENS(){
 }
 
 /*
- * Clears the PID variables
- */
-void resetPID() {
-    integral = 0.0;
-    derivative = 0.0;
-    prev_error = 0.0;
-}
-
-// Approximate arctangent using a fast polynomial (valid for small angles)
-float fastAtan(float x) {
-    return x / (1.0f + 0.28f * x * x);
-}
-
-/*
  * Use a P control algorithm to calculate the correct steering angle
  * 
  * Inputs - none
@@ -291,9 +280,20 @@ float calculateSteeringAngle(){
     float r = (float)(result.xTarget - result.xOrigin) / dy;
     angle_error = THETA_TARGET + atan(r) * RAD_TO_DEG;
 
+    // Angle Error LPF
+    static float filtered_angle_error = 0.0;
+    const float alpha = 0.2;
+    filtered_angle_error = alpha * angle_error + (1.0 - alpha) * filtered_angle_error;
+    angle_error = filtered_angle_error;
+
     // Centerline error (optional)
     float center_error = ((float)(result.xOrigin + result.xTarget)) / 2.0f - HUSKYLENS_X_CENTER;
 
+    // Center Error LPF
+    static float filtered_center_error = 0.0f;
+    filtered_center_error = alpha * center_error + (1.0f - alpha) * filtered_center_error;
+    center_error = filtered_center_error;
+    
     // Run PID computation
     pid.Compute();  // internally uses micros() for timing
                     // loads result into control_output
@@ -374,7 +374,6 @@ void parseGUICommand(){
 
   //interpret each command, change state if necessary
   if (command.equals("Start")){
-      resetPID();
       currentState = DRIVING;
       setServoSpeed(current_speed);
 //      Serial.println("Vehicle is now in DRIVING state.");
@@ -384,11 +383,13 @@ void parseGUICommand(){
       currentState = IDLE;
       ledcWrite(SPEED_SERVO, SPEED_STOP);
       setSteeringAngle(STEERING_CENTER);
+      pid.SetMode(QuickPID::Control::manual);  // disable PID temporarily
   
    } else if (command.equals("Recharge")){
       currentState = RECHARGING;
       setSteeringAngle(STEERING_CENTER);
       ledcWrite(SPEED_SERVO, SPEED_STOP);
+      pid.SetMode(QuickPID::Control::manual);  // disable PID temporarily
       //Serial.println("Vehicle is now in RECHARGING state.");
     
    } else if (command.equals("S1")){

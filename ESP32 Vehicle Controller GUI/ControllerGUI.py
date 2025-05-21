@@ -352,35 +352,35 @@ class RunViewer(QWidget):
         
         time_remaining =  time_remaining - timer_tick  #timer tick (200ms)
         
-        # if time_remaining <= 0:
+        if time_remaining <= 0:
             
-        #     if first_timer_done & second_timer_done:
-        #         third_timer_done = True
-        #         send_STOP()
-        #         print("All timers done. Exiting...")
-        #         self.close()
+            if first_timer_done & second_timer_done:
+                third_timer_done = True
+                send_STOP()
+                print("All timers done. Exiting...")
+                self.close()
             
-        #     if (first_timer_done) & (not second_timer_done) :
-        #         second_timer_done = True
-        #         # disable the control buttons
-        #         self.start_button.setEnabled(True)
-        #         self.stop_button.setEnabled(True)
+            if (first_timer_done) & (not second_timer_done) :
+                second_timer_done = True
+                # disable the control buttons
+                self.start_button.setEnabled(True)
+                self.stop_button.setEnabled(True)
                 
-        #         send_STOP()             # kick the vehicle out of Recharging mode
-        #         time_remaining = SECOND_DRIVING_PERIOD
-        #         print("Setting time remaining to SECOND_DRIVING_PERIOD")
+                send_STOP()             # kick the vehicle out of Recharging mode
+                time_remaining = SECOND_DRIVING_PERIOD
+                print("Setting time remaining to SECOND_DRIVING_PERIOD")
             
-        #     if (not first_timer_done):
-        #         first_timer_done = True
-        #         send_message("RECHARGE")        # kick the vehicle into recharging mode
+            if (not first_timer_done):
+                first_timer_done = True
+                send_message("RECHARGE")        # kick the vehicle into recharging mode
                 
-        #         # disable the control buttons
-        #         self.start_button.setEnabled(False)
-        #         self.stop_button.setEnabled(False)
+                # disable the control buttons
+                self.start_button.setEnabled(False)
+                self.stop_button.setEnabled(False)
                 
-        #         time_remaining = RECHARGING_PERIOD
+                time_remaining = RECHARGING_PERIOD
                 
-        #         print("Setting time remaining to RECHARGING_PERIOD")
+                print("Setting time remaining to RECHARGING_PERIOD")
                 
 
     def enter_Recharge(self):
@@ -388,16 +388,16 @@ class RunViewer(QWidget):
         send_message("RECHARGE")
         
     def kp1_changed(self, value):
-        send_message(f"Kp1={value:.3f}")  # You can format the value to 3 decimals if needed
+        send_message(f"Kp1={value:.4f}")  # You can format the value to 3 decimals if needed
 
     def kp2_changed(self, value):
-        send_message(f"Kp2={value:.3f}")
+        send_message(f"Kp2={value:.4f}")
 
     def ki_changed(self, value):
-        send_message(f"Ki={value:.3f}")
+        send_message(f"Ki={value:.4f}")
     
     def kd_changed(self, value):
-        send_message(f"Kd={value:.3f}")
+        send_message(f"Kd={value:.4f}")
     # Updates Vehicle speed.
     def update_speed(self, speednum):
         match speednum:
