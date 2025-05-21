@@ -1,16 +1,36 @@
-# Milestone 4 Submission
+# Welcome to the ESP32
 
-For Milestone 4, please review the following files.
+TODO: Somebody please add a heading/introduction
 
 
-1. Controller GUI > ControllerGUI.py `(actual GUI)`
-2. Controller GUI > ControllerGui_test.py `(testing GUI features)`
-3. Controller GUI > dataLog_test1.csv `(testing data logging from ESP32/INA219)`
+## YOUR TASKS
 
+### Calculate the Angle Error
+
+TODO: somebody please fill this out
+
+The HUSKYLENS camera Here is what the camera interpets
 
 
 ## UI User Manual
 To use the ESP32 Vehicle Controller Graphic User Interface (GUI), see the following documentation.
+
+### Arduino installation
+Go to the [Arduino website](https://www.arduino.cc/en/software/) and select Download Options > Windows 10+ or appropriate operating system and follow installation instructions.
+
+Open your Vehicle_Main.ino in your Arduino Editor. Go to Sketch > Include Libraries > Manage Libraries. The Library Manager should pop up. Search for and install the following libraries.
+    - QuickPID - this library is used to implement the PID Controller (more on that later)
+    - Adafruit INA219 - this library is used to interface with the INA219 sensor on the vehicle, which allows us to obtain our voltage and current readings
+
+Next, go to Sketch > Include Library > Add .ZIP Library. Use the .zip files provided on Moodle to install the remaining libraries.
+    - HUSKYLENS - this library is used to interface with the HUSKYLENS camera
+
+
+What are Libraries? Libraries are collections of "pre-written" code that somebody else already wrote that allows you, the programmer, to have a MUCH easier time doing stuff. Libraries let you use a variety of different functions. It might take a bit of reading documentation to find *how* exactly to use those functions. There are libraries written for 
+
+Why do we use them? Because there is no need to reinvent the wheel :)
+
+
 
 #### Section 1 - Pairing Your Laptop to the ESP32
 
@@ -40,7 +60,7 @@ https://www.geeksforgeeks.org/how-to-install-python-on-windows/
 How to install a Python package:
 https://packaging.python.org/en/latest/tutorials/installing-packages/
 
-#### Section 3 - Using the GUI
+#### Section 3 - Starting the GUI
 You should now have Python up and running. But before we can run our app, we need to make a small change. Open ControllerGUI.py using your choice of editor (you can legit open this with Notepad). Near the top of the file, look for the Bluetooth Variables section. Change the variable port to whichever COM Port your ESP32 Vehicle is connected to (remember? from Section 1?). For example, if my device had connected on COM Port 9, I would change this line to
 
 port = 'COM9'
@@ -57,9 +77,43 @@ Connected to port COM9 at 115200 baud.
 
 The main window will display, and the VC-GUI is ready to be used.
 
-### Arduino installation
--	Go to the [Arduino website](https://www.arduino.cc/en/software/) and select Download Options > Windows 10+ or appropriate operating system
-    -	Follow installation instructions
--	Installing libraries and configuring IDE
-	- Same instructions as vehicle overview document in Moodle
--	How to use arduino ide (writing code, uploading to esp32, etc)
+#### Section 4 - Using the GUI
+Once the VC-GUI is up and running, you should see a starting window that looks like this:
+
+TODO: add image Main Window
+
+To begin a run, first press the Browse button and either create or select a .csv file to save your run's data to. Be sure to name your .csv file something specific and descriptive, like validationTest1_speed3.csv. Otherwise, you might easlily lose track of which file is which.
+
+Once you have selected a file, you may press the Begin a Run button. A window like this will pop up.
+
+TODO: add image of Run Viewer
+
+As soon as the window pop up, 
+
+There are several controls:
+  - the Start button sends the vehicle into driving mode
+  - the Stop button pauses the vehicle
+  - the Recharge button pauses the vehicle and begins the recharging period
+  - the Speed radio buttons send the vehicle into driving mode and select the vehicle's speed
+  - the PID Controller menu allows you to modify the PID controller constants
+
+There are also several displays:
+  - the Voltage, Current, Power, and Energy bars show the instantaneous power data readings. (Note: This is the data that will be stored into the .csv file,   you get to see it live!)
+  - the State label shows the current state of the vehicle (whether it is driving, idle, or recharging). This label is there to allow you to identify when something is wrong. (For example, if the vehicle says it is in the Driving state but it is not moving!)
+  - the Timer shows you how much time is left in the current period. This feature is there to help you not break the competition rules; the vehicle will automatically stop and enter the recharging state once the initial 90-second driving period is up.
+
+Take some time to play around with these controls and get a good feel as to how the robot drives. Observe what happens to the Current when the vehicle is stopped vs when the vehicle is running around. Observe what happens when you modify Kd, Ki, Kp1, or Kp2. Does the vehicle stay on the line or does it drive off? Does it drive a little funky? Can you get the vehicle to drive as smooth as possible?
+
+
+Once your time has ended, the RunViewer Window will close. Go back to the Main Window and press the Log Viewer button. The Log Viewer window will show up. Press the Plot button at the top of the window and select your data file. Your data will be plotted onto the area below, like this:
+
+TODO: Add image of plot
+
+Now you can see the Voltage, Current, Power, and Energy vs Time throughout your run. Do you notice any patterns?
+
+
+
+
+
+
+

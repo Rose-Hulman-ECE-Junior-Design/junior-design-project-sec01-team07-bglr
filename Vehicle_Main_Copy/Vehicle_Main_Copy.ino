@@ -9,8 +9,6 @@
 
 #include "ESP32_Vehicle_Copy.h"    //custom library
 
-unsigned long lastMicros = 0;
-
 
 // VOID SETUP ===========================================================================
 void setup() {
