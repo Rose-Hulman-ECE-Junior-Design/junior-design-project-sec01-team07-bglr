@@ -81,11 +81,11 @@ running_time = 0
 
 # SYSTEM VARIABLES ==================================================================================================
 V_MAX = 12                  # TODO: consult LL and BB about these numbers
-I_MAX = 1300
+I_MAX = 1600
 P_MAX = V_MAX * I_MAX
-E_MAX = 300
+E_MAX = 1772                # Joules
 
-powerSupply_capacitance = 100   #
+powerSupply_capacitance = 30.39   # Farads, measured Power supply capacitance
 
 
 RECHARGING_PERIOD = 45      # recharging period, seconds
@@ -115,6 +115,7 @@ class LogViewer(QWidget):
         self.energy_spent_label = QLabel("Total Energy Spent: N/A")
         self.energy_gained_label = QLabel("Total Energy Gained (RECHARGE): N/A")
         self.avg_power_label = QLabel("Average Power: N/A")
+        self.energy_remaining_label = QLabel("Energy Remaining: N/A")
 
         # Layout
         layout = QVBoxLayout()
@@ -123,6 +124,7 @@ class LogViewer(QWidget):
         layout.addWidget(self.energy_spent_label)
         layout.addWidget(self.energy_gained_label)
         layout.addWidget(self.avg_power_label)
+        layout.addWidget(self.energy_remaining_label)
         self.setLayout(layout)
         
 
@@ -177,10 +179,11 @@ class LogViewer(QWidget):
         self.canvas.draw()
 
         # Update stats
-        total_energy, recharge_energy, avg_power = calculateEnergyUsage(file_path)
+        total_energy, recharge_energy, avg_power, energy_remaining = calculateEnergyUsage(file_path)
         self.energy_spent_label.setText(f"Total Energy Spent: {total_energy:.2f} J")
         self.energy_gained_label.setText(f"Total Energy Gained (RECHARGE): {recharge_energy:.2f} J")
         self.avg_power_label.setText(f"Average Power: {avg_power:.2f} mW")
+        self.energy_remaining_label.setText(f"Energy Remaining: {energy_remaining:.2f} J")
         
 # ===================================================================================================================      
             
@@ -535,26 +538,34 @@ Outputs - see parameters above
 """
 def calculateEnergyUsage(filepath):
     # TODO: implement correctly
-    total_energy_spent = 10
-    total_energy_regained = 2
-    avg_power = 3
+    total_energy_spent = 0
+    total_energy_regained = 0
+    avg_power = 0
+    remaining_energy = 322
     
     #TODO: compare the results between doing the power integration and 
     # subtracting starting vs ending instantaneous power supply energy
     
-    df = pd.read_csv(data_file)           # read the csv file
+    df = pd.read_csv(filepath)           # read the csv file
     
-    power = df["Power (mW)"].to_numpy()         # extract the power vector
-    time = 0.5 * df["Log Number"].to_numpy()    # extract the time vector
+    power = df["Power (mW)"].to_numpy()     # extract the power vector
+    avg_power = np.average(power)
     
-    charging_df = df[df['State'] != 'CHARGING']
-    power_re = charging_df["Power (mW)"].to_numpy()         # extract the power vector
-    time_re = 0.5 * charging_df["Log Number"].to_numpy()    # extract time vector
+    energy = df["Energy (J)"].to_numpy()    # extract the energy vector
+    remaining_energy = energy[-1]
     
-    # Numerical integration using the trapezoidal rule
-    energy = np.trapezoid(power, time)  # returns energy in joules
+    states = df["State"].to_numpy()         # extract the state vector
     
-    return total_energy_spent, total_energy_regained, avg_power
+    # r = np.where(states == 'CHARGING')[0]   # find the first
+
+    # if r > 0:
+    #     r1 = r[0]
+    # else:
+    #     r1 = 0
+    
+    # total_energy_spent = (energy[0] - energy[r1]) + (energy[r2] - energy[-1])
+    
+    return total_energy_spent, total_energy_regained, avg_power, remaining_energy
 
 """Writes column names to the .csv for easier processing. """
 def initialize_csv(filepath):
@@ -581,6 +592,7 @@ def parse_dataLog(response):
     
     # TODO: Scale v_cap back to its normal value
     # E = (1/2)CV^2
+    print("Power Supply Voltage(V): " + str(v_cap)[:5])
     E_inst = v_cap * v_cap * powerSupply_capacitance / 2  # turn power supply voltage to energy
 
 

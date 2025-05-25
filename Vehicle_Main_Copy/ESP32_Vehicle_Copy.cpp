@@ -19,8 +19,8 @@
 
 
 
-float Kp1 = DEFAULT_KP1_L;                // proportional angle error parameter            
-float Kp2 = DEFAULT_KP2_L;                // proportional center error parameter
+float Kp1 = DEFAULT_KP1;                // proportional angle error parameter            
+float Kp2 = DEFAULT_KP2;                // proportional center error parameter
 float Ki = DEFAULT_KI;
 float Kd = DEFAULT_KD;
 
@@ -304,13 +304,6 @@ float calculateSteeringAngle(){
     return final_output;
 }
 
-/*
- * Uses power supply voltage to calculate correct speed
- * in order to compensate for drop in voltage
- */
-float calculateServoSpeed(){
-  //TODO: implement this
-}
 
 /*
  * Read data from the INA219 into the global variables.
@@ -375,10 +368,7 @@ void parseGUICommand(){
   //interpret each command, change state if necessary
   if (command.equals("Start")){
       currentState = DRIVING;
-      setServoSpeed(current_speed);
-//      Serial.println("Vehicle is now in DRIVING state.");
-//      Serial.print("Speed Servo: "); Serial.println(current_speed);
-    
+      setServoSpeed(current_speed);    
    }else if (command.equals("Stop")){
       currentState = IDLE;
       ledcWrite(SPEED_SERVO, SPEED_STOP);
@@ -396,32 +386,40 @@ void parseGUICommand(){
        //Serial.print("Speed set to "); Serial.println(SPEED_1);
        currentState = DRIVING;
        current_speed = SPEED_1;
-       Kp1 = DEFAULT_KP1_L;
-       Kp2 = DEFAULT_KP2_L;
+       Kp1 = DEFAULT_KP1;
+       Kp2 = DEFAULT_KP2;
+       Ki = DEFAULT_KI;
+       Kd = DEFAULT_KD;
        setServoSpeed(current_speed);
     
    }else if (command.equals("S2")){
        //Serial.print("Speed set to "); Serial.println(SPEED_2);
        currentState = DRIVING;
        current_speed = SPEED_2;
-       Kp1 = DEFAULT_KP1_L;
-       Kp2 = DEFAULT_KP2_L;
+       Kp1 = DEFAULT_KP1;
+       Kp2 = DEFAULT_KP2;
+       Ki = DEFAULT_KI;
+       Kd = DEFAULT_KD;
        setServoSpeed(current_speed);
     
    }else if (command.equals("S3")){
        Serial.print("Speed set to "); Serial.println(SPEED_3);
        currentState = DRIVING;
        current_speed = SPEED_3;
-       Kp1 = DEFAULT_KP1_L;
-       Kp2 = DEFAULT_KP2_L;       
+       Kp1 = DEFAULT_KP1;
+       Kp2 = DEFAULT_KP2;
+       Ki = DEFAULT_KI;
+       Kd = DEFAULT_KD;     
        setServoSpeed(current_speed);
     
    }else if (command.equals("S4")){
       //Serial.print("Speed set to "); Serial.println(SPEED_4);
       currentState = DRIVING;
       current_speed = SPEED_4;
-      Kp1 = DEFAULT_KP1_L;
-      Kp2 = DEFAULT_KP2_L;
+       Kp1 = DEFAULT_KP1;
+       Kp2 = DEFAULT_KP2;
+       Ki = DEFAULT_KI;
+       Kd = DEFAULT_KD;
       setServoSpeed(current_speed);
     
    }else if (command.equals("RECHARGE")){
@@ -490,7 +488,7 @@ void sendDataLog(){
   readINA219();  //read INA219
   //read capacitor voltage
   int cap_voltage_read = analogRead(CAP_PIN);               // 1024 max
-  float cap_voltage = ( cap_voltage_read / ADC_RESOLUTION ) * ADC_MAX_VOLTAGE;
+  float cap_voltage = CAP_VOLTAGE_SCALING * ( cap_voltage_read / ADC_RESOLUTION ) * ADC_MAX_VOLTAGE;
 
   char current[FLOAT_BUFF_SIZE], voltage[FLOAT_BUFF_SIZE], state[FLOAT_BUFF_SIZE], v_cap[FLOAT_BUFF_SIZE];
   //convert INA219 values from floats to strings - ZERO PADDED SO THEY ARE ALWAYS THE SAME LENGTH!!!

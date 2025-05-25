@@ -74,17 +74,15 @@
 
 
 #define CAP_PIN                   36
-#define CAP_VOLTAGE_SCALING       10
+#define CAP_VOLTAGE_SCALING       38.52             //convert from 3.3V scale back to 12V scale
 #define ADC_RESOLUTION            1024
-#define ADC_MAX_VOLTAGE           3.3
+#define ADC_MAX_VOLTAGE           3.21
 
 
-#define DEFAULT_KP1_L             1.5               //default Kp parameters for Low Speeds (Speeds 1-4)
-#define DEFAULT_KP2_L             0.9
-#define DEFAULT_KP1_H             1.0               //default Kp parameters for High Speeds (Speeds 5-6)
-#define DEFAULT_KP2_H             2.0
-#define DEFAULT_KI                1.0
-#define DEFAULT_KD                1.0
+#define DEFAULT_KP1               0.1               //default Kp parameters for Low Speeds (Speeds 1-4)
+#define DEFAULT_KP2               0.001
+#define DEFAULT_KI                0
+#define DEFAULT_KD                0
 #define PID_SAMPLE_TIME           5000             // microseconds
 
 
@@ -137,7 +135,6 @@ void initCapacitorPin();
 void setSteeringAngle(float angle);
 void setServoSpeed(uint32_t duty);
 float calculateSteeringAngle();
-float calculateServoSpeed();
 
 void readINA219();       
 String readGUICommand();  
