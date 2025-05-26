@@ -344,7 +344,7 @@ class RunViewer(QWidget):
         self.voltage_label.setText("Voltage: " + str(V_inst) + " V")
         self.current_label.setText("Current: " + str(I_inst) + " mA")
         self.power_label.setText("Power: " + str(P_inst)[:7] + " mW")
-        self.energy_label.setText("Energy: " + str(E_inst) + " J")
+        self.energy_label.setText("Energy: " + str(E_inst)[:7] + " J")
         self.state_label.setText(S_inst)
         self.time_label.setText("Time Remaining: " + "{:.2f}".format(time_remaining))
         
@@ -355,35 +355,35 @@ class RunViewer(QWidget):
         
         time_remaining =  time_remaining - timer_tick  #timer tick (200ms)
         
-        if time_remaining <= 0:
+        # if time_remaining <= 0:
             
-            if first_timer_done & second_timer_done:
-                third_timer_done = True
-                send_STOP()
-                print("All timers done. Exiting...")
-                self.close()
+        #     if first_timer_done & second_timer_done:
+        #         third_timer_done = True
+        #         send_STOP()
+        #         print("All timers done. Exiting...")
+        #         self.close()
             
-            if (first_timer_done) & (not second_timer_done) :
-                second_timer_done = True
-                # disable the control buttons
-                self.start_button.setEnabled(True)
-                self.stop_button.setEnabled(True)
+        #     if (first_timer_done) & (not second_timer_done) :
+        #         second_timer_done = True
+        #         # disable the control buttons
+        #         self.start_button.setEnabled(True)
+        #         self.stop_button.setEnabled(True)
                 
-                send_STOP()             # kick the vehicle out of Recharging mode
-                time_remaining = SECOND_DRIVING_PERIOD
-                print("Setting time remaining to SECOND_DRIVING_PERIOD")
+        #         send_STOP()             # kick the vehicle out of Recharging mode
+        #         time_remaining = SECOND_DRIVING_PERIOD
+        #         print("Setting time remaining to SECOND_DRIVING_PERIOD")
             
-            if (not first_timer_done):
-                first_timer_done = True
-                send_message("RECHARGE")        # kick the vehicle into recharging mode
+        #     if (not first_timer_done):
+        #         first_timer_done = True
+        #         send_message("RECHARGE")        # kick the vehicle into recharging mode
                 
-                # disable the control buttons
-                self.start_button.setEnabled(False)
-                self.stop_button.setEnabled(False)
+        #         # disable the control buttons
+        #         self.start_button.setEnabled(False)
+        #         self.stop_button.setEnabled(False)
                 
-                time_remaining = RECHARGING_PERIOD
+        #         time_remaining = RECHARGING_PERIOD
                 
-                print("Setting time remaining to RECHARGING_PERIOD")
+        #         print("Setting time remaining to RECHARGING_PERIOD")
                 
 
     def enter_Recharge(self):
@@ -587,7 +587,7 @@ def parse_dataLog(response):
     V_inst = float(values[1])             # voltage in V
     P_inst = I_inst * V_inst              # power in mW
     S_inst = state_map.get(int(values[2]), "UNKNOWN")    # current state
-    v_cap = float(values[3])              # capacitor voltage
+    v_cap = float(values[3])  * 3.73            # capacitor voltage
     
     
     # TODO: Scale v_cap back to its normal value

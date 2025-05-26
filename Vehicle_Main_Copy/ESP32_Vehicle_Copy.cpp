@@ -31,7 +31,7 @@ float filtered_angle_error = 0.0;    // declare globally or as a static inside f
 const float alpha = 0.2;              // smoothing factor (0.1 to 0.3 recommended) 
 
 QuickPID pid(&angle_error, &control_output, &setpoint, Kp1, Ki, Kd, QuickPID::Action::direct);
-//pid.SetSampleTimeUs(PID_SAMPLE_TIME);  // 10 ms (default), adjust as needed
+
 
 
 float integral = 0; 
@@ -145,8 +145,9 @@ void initSpeedServo(){
  */
 void setupPID() {
     pid.SetMode(QuickPID::Control::automatic);
-    pid.SetOutputLimits(-30.0f, 30.0f);  // degrees of steering angle
+    pid.SetOutputLimits(-70.0f, 70.0f);  // degrees of steering angle
     pid.SetSampleTimeUs(0);  // let it run as often as you call it
+    //pid.SetSampleTimeUs(PID_SAMPLE_TIME);  // 10 ms (default), adjust as needed
 }
 
 
@@ -196,6 +197,8 @@ void init2HzTimer(){
  */
  void initCapacitorPin(){
   pinMode(CAP_PIN, INPUT);
+  analogReadResolution(12);  // Optional: Default is 12-bit (0–4095)
+  
  }
 
 
@@ -386,40 +389,40 @@ void parseGUICommand(){
        //Serial.print("Speed set to "); Serial.println(SPEED_1);
        currentState = DRIVING;
        current_speed = SPEED_1;
-       Kp1 = DEFAULT_KP1;
-       Kp2 = DEFAULT_KP2;
-       Ki = DEFAULT_KI;
-       Kd = DEFAULT_KD;
+//       Kp1 = DEFAULT_KP1;
+//       Kp2 = DEFAULT_KP2;
+//       Ki = DEFAULT_KI;
+//       Kd = DEFAULT_KD;
        setServoSpeed(current_speed);
     
    }else if (command.equals("S2")){
        //Serial.print("Speed set to "); Serial.println(SPEED_2);
        currentState = DRIVING;
        current_speed = SPEED_2;
-       Kp1 = DEFAULT_KP1;
-       Kp2 = DEFAULT_KP2;
-       Ki = DEFAULT_KI;
-       Kd = DEFAULT_KD;
+//       Kp1 = DEFAULT_KP1;
+//       Kp2 = DEFAULT_KP2;
+//       Ki = DEFAULT_KI;
+//       Kd = DEFAULT_KD;
        setServoSpeed(current_speed);
     
    }else if (command.equals("S3")){
        Serial.print("Speed set to "); Serial.println(SPEED_3);
        currentState = DRIVING;
        current_speed = SPEED_3;
-       Kp1 = DEFAULT_KP1;
-       Kp2 = DEFAULT_KP2;
-       Ki = DEFAULT_KI;
-       Kd = DEFAULT_KD;     
+//       Kp1 = DEFAULT_KP1;
+//       Kp2 = DEFAULT_KP2;
+//       Ki = DEFAULT_KI;
+//       Kd = DEFAULT_KD;     
        setServoSpeed(current_speed);
     
    }else if (command.equals("S4")){
       //Serial.print("Speed set to "); Serial.println(SPEED_4);
       currentState = DRIVING;
       current_speed = SPEED_4;
-       Kp1 = DEFAULT_KP1;
-       Kp2 = DEFAULT_KP2;
-       Ki = DEFAULT_KI;
-       Kd = DEFAULT_KD;
+//       Kp1 = DEFAULT_KP1;
+//       Kp2 = DEFAULT_KP2;
+//       Ki = DEFAULT_KI;
+//       Kd = DEFAULT_KD;
       setServoSpeed(current_speed);
     
    }else if (command.equals("RECHARGE")){
@@ -487,8 +490,7 @@ void sendDataLog(){
   //update sensor readings
   readINA219();  //read INA219
   //read capacitor voltage
-  int cap_voltage_read = analogRead(CAP_PIN);               // 1024 max
-  float cap_voltage = CAP_VOLTAGE_SCALING * ( cap_voltage_read / ADC_RESOLUTION ) * ADC_MAX_VOLTAGE;
+  float cap_voltage = analogReadMilliVolts(CAP_PIN) / 1000.0;  // Must be an ADC1 pin
 
   char current[FLOAT_BUFF_SIZE], voltage[FLOAT_BUFF_SIZE], state[FLOAT_BUFF_SIZE], v_cap[FLOAT_BUFF_SIZE];
   //convert INA219 values from floats to strings - ZERO PADDED SO THEY ARE ALWAYS THE SAME LENGTH!!!

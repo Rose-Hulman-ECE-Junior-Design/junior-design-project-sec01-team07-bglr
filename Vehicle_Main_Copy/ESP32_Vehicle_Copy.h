@@ -74,13 +74,13 @@
 
 
 #define CAP_PIN                   36
-#define CAP_VOLTAGE_SCALING       38.52             //convert from 3.3V scale back to 12V scale
+#define CAP_VOLTAGE_SCALING       3.73             //convert from 3.3V scale back to 12V scale
 #define ADC_RESOLUTION            1024
-#define ADC_MAX_VOLTAGE           3.21
+#define ADC_MAX_VOLTAGE           3.3
 
 
-#define DEFAULT_KP1               0.1               //default Kp parameters for Low Speeds (Speeds 1-4)
-#define DEFAULT_KP2               0.001
+#define DEFAULT_KP1               1               //default Kp parameters for Low Speeds (Speeds 1-4)
+#define DEFAULT_KP2               1
 #define DEFAULT_KI                0
 #define DEFAULT_KD                0
 #define PID_SAMPLE_TIME           5000             // microseconds
