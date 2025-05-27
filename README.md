@@ -118,8 +118,7 @@ Take some time to play around with these controls and get a good feel as to how 
 
 Once your time has ended, the RunViewer Window will close. Go back to the Main Window and press the Log Viewer button. The Log Viewer window will show up. Press the Plot button at the top of the window and select your data file. Your data will be plotted onto the area below, like this:
 
-![image](https://github.com/user-attachments/assets/5ea03739-929d-40b5-acb0-5dea9bd4541c)
-
+![image](https://github.com/user-attachments/assets/baaf0df5-28db-4c0e-9e34-f3bf854fa819)
 
 
 Now you can see the Voltage, Current, Power, and Energy vs Time throughout your run. Do you notice any patterns?
