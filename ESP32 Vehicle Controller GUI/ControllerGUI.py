@@ -45,7 +45,6 @@ Author: CKG
 
 """
 
-
 # GUI VARIABLES ======================================================================================================
 WINDOW_WIDTH = 1000
 WINDOW_HEIGHT = 800
@@ -71,7 +70,6 @@ state_map = {
 
 # BLUETOOTH VARIABLES ================================================================================================
 port = 'COM3'
-num_bytes = 39
 baud_rate = 115200
 bluetooth_serial = None
 serial_lock = threading.Lock()
@@ -355,39 +353,38 @@ class RunViewer(QWidget):
         
         time_remaining =  time_remaining - timer_tick  #timer tick (200ms)
         
-        # if time_remaining <= 0:
+        if time_remaining <= 0:
             
-        #     if first_timer_done & second_timer_done:
-        #         third_timer_done = True
-        #         send_STOP()
-        #         print("All timers done. Exiting...")
-        #         self.close()
+            if first_timer_done & second_timer_done:
+                third_timer_done = True
+                send_STOP()
+                print("All timers done. Exiting...")
+                self.close()
             
-        #     if (first_timer_done) & (not second_timer_done) :
-        #         second_timer_done = True
-        #         # disable the control buttons
-        #         self.start_button.setEnabled(True)
-        #         self.stop_button.setEnabled(True)
+            if (first_timer_done) & (not second_timer_done) :
+                second_timer_done = True
+                # disable the control buttons
+                self.start_button.setEnabled(True)
+                self.stop_button.setEnabled(True)
                 
-        #         send_STOP()             # kick the vehicle out of Recharging mode
-        #         time_remaining = SECOND_DRIVING_PERIOD
-        #         print("Setting time remaining to SECOND_DRIVING_PERIOD")
+                send_STOP()             # kick the vehicle out of Recharging mode
+                time_remaining = SECOND_DRIVING_PERIOD
+                print("Setting time remaining to SECOND_DRIVING_PERIOD")
             
-        #     if (not first_timer_done):
-        #         first_timer_done = True
-        #         send_message("RECHARGE")        # kick the vehicle into recharging mode
+            if (not first_timer_done):
+                first_timer_done = True
+                send_message("RECHARGE")        # kick the vehicle into recharging mode
                 
-        #         # disable the control buttons
-        #         self.start_button.setEnabled(False)
-        #         self.stop_button.setEnabled(False)
+                # disable the control buttons
+                self.start_button.setEnabled(False)
+                self.stop_button.setEnabled(False)
                 
-        #         time_remaining = RECHARGING_PERIOD
+                time_remaining = RECHARGING_PERIOD
                 
-        #         print("Setting time remaining to RECHARGING_PERIOD")
+                print("Setting time remaining to RECHARGING_PERIOD")
                 
 
     def enter_Recharge(self):
-        #TODO: restart the timer for 45 seconds
         send_message("RECHARGE")
         
     def kp1_changed(self, value):
@@ -525,6 +522,21 @@ def send_message(command):
 # ===============================================================================================================
 # ===============================================================================================================
 
+# Finds the starting and stopping indices of the CHARGING section of the states.
+def findStartStop(states):
+    # Create a boolean mask
+    is_recharge = states == "CHARGING"
+
+    # Get indices where mask is True
+    recharge_indices = np.where(is_recharge)[0]
+
+    # Get start and stop from those indices
+    start = recharge_indices[0]
+    stop = recharge_indices[-1]
+    
+    return start, stop
+    
+
 """"
 Extracts data from a .csv file and calculates
 
@@ -542,10 +554,7 @@ def calculateEnergyUsage(filepath):
     total_energy_regained = 0
     avg_power = 0
     remaining_energy = 322
-    
-    #TODO: compare the results between doing the power integration and 
-    # subtracting starting vs ending instantaneous power supply energy
-    
+ 
     df = pd.read_csv(filepath)           # read the csv file
     
     power = df["Power (mW)"].to_numpy()     # extract the power vector
@@ -555,16 +564,11 @@ def calculateEnergyUsage(filepath):
     remaining_energy = energy[-1]
     
     states = df["State"].to_numpy()         # extract the state vector
+    (start_idx, stop_idx) = findStartStop(states)
     
-    # r = np.where(states == 'CHARGING')[0]   # find the first
-
-    # if r > 0:
-    #     r1 = r[0]
-    # else:
-    #     r1 = 0
-    
-    # total_energy_spent = (energy[0] - energy[r1]) + (energy[r2] - energy[-1])
-    
+    total_energy_spent = (energy[0] - energy[start_idx - 1]) + (energy[stop_idx + 1] - energy[-1])
+    total_energy_regained = energy[stop_idx] - energy[start_idx]
+     
     return total_energy_spent, total_energy_regained, avg_power, remaining_energy
 
 """Writes column names to the .csv for easier processing. """
@@ -589,19 +593,8 @@ def parse_dataLog(response):
     S_inst = state_map.get(int(values[2]), "UNKNOWN")    # current state
     v_cap = float(values[3])  * 3.73            # capacitor voltage
     
-    
-    # TODO: Scale v_cap back to its normal value
-    # E = (1/2)CV^2
     print("Power Supply Voltage(V): " + str(v_cap)[:5])
     E_inst = v_cap * v_cap * powerSupply_capacitance / 2  # turn power supply voltage to energy
-
-
-    #print("TIME (s): " + str(log_num *0.5))
-    #print("Current (mA): " + str(I_inst))
-    #print("Voltage (V): " + str(V_inst))
-    #print("Power (mW): " + str(P_inst)[:7])
-    #print("Energy (J):" + str(E_inst))
-    #print("State: " + S_inst)
 
     if add_to_log:
         log = [log_num * 0.5, V_inst, I_inst, P_inst, E_inst, S_inst]
@@ -637,7 +630,6 @@ def handle_Rx():
             
         response_str = str(response)[2:]        #strip out the first two characters "b'"
         response_str = response_str[:-3]        #strip out the three characters too "\n'"
-        # print('====================')
         
         # parse the response
         parse_dataLog(response_str)
