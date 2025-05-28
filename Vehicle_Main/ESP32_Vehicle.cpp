@@ -10,7 +10,7 @@
  * Author: CKG, LL, BB
  */
 #include <SoftwareSerial.h>   //include the espsoftwareserial library
-//#include <Wire.h>
+#include <QuickPID.h>
 #include <Adafruit_INA219.h>
 #include "HUSKYLENS.h"
 #include "SoftwareSerial.h"
@@ -18,22 +18,25 @@
 #include "ESP32_Vehicle.h"
 
 
-float Kp1 = DEFAULT_KP1_L;                // proportional angle error parameter            
-float Kp2 = DEFAULT_KP2_L;                // proportional center error parameter
+
+float Kp1 = DEFAULT_KP1;                // proportional angle error parameter            
+float Kp2 = DEFAULT_KP2;                // proportional center error parameter
 float Ki = DEFAULT_KI;
 float Kd = DEFAULT_KD;
 
-//float dt = TIME_STEP * 0.000001;          // time step, 100 us
-//unsigned long lastUpdate = 0;
-//const unsigned long controlInterval = 30;  // ms
+float angle_error = 0.0;
+float control_output = 0.0;
+float setpoint = 0.0;
+float filtered_angle_error = 0.0;    // declare globally or as a static inside function
+const float alpha = 0.2;              // smoothing factor (0.1 to 0.3 recommended) 
+
+QuickPID pid(&angle_error, &control_output, &setpoint, Kp1, Ki, Kd, QuickPID::Action::direct);
+
+
 
 float integral = 0; 
 float derivative = 0;
 float prev_error = 0;
-
-//float Kd, Ki = 1;
-//float dt, integral, derivative = 2;
-
 
 char BT_buffer_incoming[BT_BUFFER_SIZE];
 
@@ -53,6 +56,7 @@ int dataLog_num;
 BluetoothSerial SerialBT;
 HUSKYLENS huskylens;
 Adafruit_INA219 ina219;
+
 
 // Timer Variables ========================
 hw_timer_t *timer = NULL;
@@ -136,6 +140,16 @@ void initSpeedServo(){
   ledcWrite(SPEED_SERVO, zeroSpeedPWMCount);
 }
 
+/*
+ * Intialize PID controller.
+ */
+void setupPID() {
+    pid.SetMode(QuickPID::Control::automatic);
+    pid.SetOutputLimits(-70.0f, 70.0f);  // degrees of steering angle
+    pid.SetSampleTimeUs(0);  // let it run as often as you call it
+    //pid.SetSampleTimeUs(PID_SAMPLE_TIME);  // 10 ms (default), adjust as needed
+}
+
 
 /*
  * Timer interrupt service routine 
@@ -183,6 +197,8 @@ void init2HzTimer(){
  */
  void initCapacitorPin(){
   pinMode(CAP_PIN, INPUT);
+  analogReadResolution(12);  // Optional: Default is 12-bit (0–4095)
+  
  }
 
 
@@ -240,100 +256,57 @@ HUSKYLENSResult readHUSKYLENS(){
 }
 
 /*
- * Clears the PID variables
- */
-void resetPID() {
-    integral = 0.0;
-    derivative = 0.0;
-    prev_error = 0.0;
-}
-
-// Approximate arctangent using a fast polynomial (valid for small angles)
-float fastAtan(float x) {
-    return x / (1.0f + 0.28f * x * x);
-}
-
-/*
  * Use a P control algorithm to calculate the correct steering angle
  * 
  * Inputs - none
  * Outputs - target steering angle, in degrees, as a float
  */
-float calculateSteeringAngle( float dt){
-
-    if (dt < 0.0001f) return steeringAngle;
-
+float calculateSteeringAngle(){
     HUSKYLENSResult result = readHUSKYLENS();
-    
-    if (result.command != COMMAND_RETURN_ARROW){  //check if we got a valid arrow object
-//       Serial.println("Object unknown!")
-       resetPID();
-       return steeringAngle;
+
+    if (result.command != COMMAND_RETURN_ARROW) {
+        // No valid line
+        pid.SetMode(QuickPID::Control::manual);  // disable PID temporarily
+        control_output = 0.0f;
+        return steeringAngle;
     }
 
-   // Calculate Errors
-   float dy = (float)(result.yTarget - result.yOrigin);
-   if (dy == 0) return steeringAngle;
+    // Re-enable PID if it was off
+    if (pid.GetMode() != (uint8_t)QuickPID::Control::automatic) {
+        pid.SetMode(QuickPID::Control::automatic);
+    }
 
-   float inv_dy = 1.0f / dy;
-   float r = (float)(result.xTarget - result.xOrigin) * inv_dy;
-   //float r = ((float)(result.xTarget - result.xOrigin) )/ ( (float)(result.yTarget - result.yOrigin));
-   float angle_error = THETA_TARGET + ( atan(r) * RAD_TO_DEG );
-   //float angle_error = THETA_TARGET + fastAtan(r) * RAD_TO_DEG;
+    // Compute angle error
+    float dy = (float)(result.yTarget - result.yOrigin);
+    if (dy == 0) return control_output;  // let's not divide-by-zero
 
-   //find the midpoint of the line, compare to the center of the screen
-   float center_error = ((float)(result.xOrigin + result.xTarget))/2 - HUSKYLENS_X_CENTER;
+    float r = (float)(result.xTarget - result.xOrigin) / dy;
+    angle_error = THETA_TARGET + atan(r) * RAD_TO_DEG;
 
-//   // Calculate Time Step
-//   unsigned long currentMicros = micros();
-//   dt = (currentMicros - lastMicros) / 1000000.0;
-//   lastMicros = currentMicros;
+    // Angle Error LPF
+    static float filtered_angle_error = 0.0;
+    const float alpha = 0.2;
+    filtered_angle_error = alpha * angle_error + (1.0 - alpha) * filtered_angle_error;
+    angle_error = filtered_angle_error;
 
-//   float P = Kp1 * angle_error - Kp2 * center_error;
-//   
-////   Unimplemented PID controller
-////   float P = Kp * error;
-//     integral += angle_error * dt;
-//     float I = Ki * integral;
-//
-////   derivative = (error - prev_error) / dt;
-//     derivative = (error - prev_error) / dt;
-//     float D = Kd * derivative;
-//
-//    prev_error = P + I + D;
-//   
-//   return prev_error;  
+    // Centerline error (optional)
+    float center_error = ((float)(result.xOrigin + result.xTarget)) / 2.0f - HUSKYLENS_X_CENTER;
 
-// ========== CHAT SOLUTION =================
-// TODO: chat does it based solely on angle error ??
-    // PID control on angle error
-    float error = angle_error; // for clarity
+    // Center Error LPF
+    static float filtered_center_error = 0.0f;
+    filtered_center_error = alpha * center_error + (1.0f - alpha) * filtered_center_error;
+    center_error = filtered_center_error;
     
-    integral += error * dt;
-    integral = constrain(integral, -MAX_I_SUM / Ki, MAX_I_SUM / Ki);
-    derivative = (error - prev_error) / dt;
-    
-    float P = Kp1 * error;
-    float I = Ki * integral;
-    float D = Kd * derivative;
-    
-    float control_signal = P + I + D;
-    
-    // Apply center error bias if desired
-    control_signal -= Kp2 * center_error;
-    
-    prev_error = error; // Save for next iteration
-    
-    return control_signal;
+    // Run PID computation
+    pid.Compute();  // internally uses micros() for timing
+                    // loads result into control_output
+
+    // Apply center bias
+    float final_output = control_output - (Kp2 * center_error);
+
+    return final_output;
 }
 
-/*
- * Uses power supply voltage to calculate correct speed
- * in order to compensate for drop in voltage
- */
-float calculateServoSpeed(){
-  //TODO: implement this
-}
 
 /*
  * Read data from the INA219 into the global variables.
@@ -397,95 +370,93 @@ void parseGUICommand(){
 
   //interpret each command, change state if necessary
   if (command.equals("Start")){
-      resetPID();
       currentState = DRIVING;
       setServoSpeed(current_speed);
-//      Serial.println("Vehicle is now in DRIVING state.");
-//      Serial.print("Speed Servo: "); Serial.println(current_speed);
-    
+      //pid.SetTunings(Kp1, Ki, Kd);
+          
    }else if (command.equals("Stop")){
       currentState = IDLE;
       ledcWrite(SPEED_SERVO, SPEED_STOP);
       setSteeringAngle(STEERING_CENTER);
+      pid.SetMode(QuickPID::Control::manual);  // disable PID temporarily
   
    } else if (command.equals("Recharge")){
       currentState = RECHARGING;
       setSteeringAngle(STEERING_CENTER);
       ledcWrite(SPEED_SERVO, SPEED_STOP);
+      pid.SetMode(QuickPID::Control::manual);  // disable PID temporarily
       //Serial.println("Vehicle is now in RECHARGING state.");
     
    } else if (command.equals("S1")){
        //Serial.print("Speed set to "); Serial.println(SPEED_1);
        currentState = DRIVING;
        current_speed = SPEED_1;
-       Kp1 = DEFAULT_KP1_L;
-       Kp2 = DEFAULT_KP2_L;
+//       Kp1 = DEFAULT_KP1;
+//       Kp2 = DEFAULT_KP2;
+//       Ki = DEFAULT_KI;
+//       Kd = DEFAULT_KD;
        setServoSpeed(current_speed);
     
    }else if (command.equals("S2")){
        //Serial.print("Speed set to "); Serial.println(SPEED_2);
        currentState = DRIVING;
        current_speed = SPEED_2;
-       Kp1 = DEFAULT_KP1_L;
-       Kp2 = DEFAULT_KP2_L;
+//       Kp1 = DEFAULT_KP1;
+//       Kp2 = DEFAULT_KP2;
+//       Ki = DEFAULT_KI;
+//       Kd = DEFAULT_KD;
        setServoSpeed(current_speed);
     
    }else if (command.equals("S3")){
        Serial.print("Speed set to "); Serial.println(SPEED_3);
        currentState = DRIVING;
        current_speed = SPEED_3;
-       Kp1 = DEFAULT_KP1_L;
-       Kp2 = DEFAULT_KP2_L;       
+//       Kp1 = DEFAULT_KP1;
+//       Kp2 = DEFAULT_KP2;
+//       Ki = DEFAULT_KI;
+//       Kd = DEFAULT_KD;     
        setServoSpeed(current_speed);
     
    }else if (command.equals("S4")){
       //Serial.print("Speed set to "); Serial.println(SPEED_4);
       currentState = DRIVING;
       current_speed = SPEED_4;
-      Kp1 = DEFAULT_KP1_L;
-      Kp2 = DEFAULT_KP2_L;
-      setServoSpeed(current_speed);
-    
-   }else if (command.equals("S5")){
-      //Serial.print("Speed set to "); Serial.println(SPEED_5);
-      currentState = DRIVING;
-      current_speed = SPEED_5;
-      Kp1 = DEFAULT_KP1_H;
-      Kp2 = DEFAULT_KP2_H;
-      setServoSpeed(current_speed);
-    
-   }else if (command.equals("S6")){
-      //Serial.print("Speed set to "); Serial.println(SPEED_6);
-      currentState = DRIVING;
-      current_speed = SPEED_6;
-      Kp1 = DEFAULT_KP1_H;
-      Kp2 = DEFAULT_KP2_H;
+//       Kp1 = DEFAULT_KP1;
+//       Kp2 = DEFAULT_KP2;
+//       Ki = DEFAULT_KI;
+//       Kd = DEFAULT_KD;
       setServoSpeed(current_speed);
     
    }else if (command.equals("RECHARGE")){
+      
       currentState = RECHARGING;
-      ledcWrite(SPEED_SERVO, SPEED_STOP);    
+      ledcWrite(SPEED_SERVO, SPEED_STOP);
+          
    } else if (command.startsWith("Kp1=")){
       String newVal = command.substring(4);   //strip out the first 4 chars
       Kp1 = newVal.toFloat();
+      pid.SetTunings(Kp1, Ki, Kd);
       //Serial.print("Kp1 set to "); Serial.println(Kp1);
     
     
    } else if (command.startsWith("Kp2=")){
       String newVal = command.substring(4);   //strip out the first 4 chars
       Kp1 = newVal.toFloat();
+      pid.SetTunings(Kp1, Ki, Kd);
       //Serial.print("Kp1 set to "); Serial.println(Kp1);
     
    } else if (command.startsWith("Ki=")){
 
       String newVal = command.substring(3);   //strip out the first 3 chars
       Ki = newVal.toFloat();
+      pid.SetTunings(Kp1, Ki, Kd);
       //Serial.print("Ki set to "); Serial.println(Ki);
       
    } else if (command.startsWith("Kd=")){
 
       String newVal = command.substring(3);   //strip out the first 3 chars
       Kd = newVal.toFloat();
+      pid.SetTunings(Kp1, Ki, Kd);
       //Serial.print("Kd set to "); Serial.println(Kd);
       
    }else {
@@ -521,8 +492,7 @@ void sendDataLog(){
   //update sensor readings
   readINA219();  //read INA219
   //read capacitor voltage
-  int cap_voltage_read = analogRead(CAP_PIN);               // 1024 max
-  float cap_voltage = ( cap_voltage_read / ADC_RESOLUTION ) * ADC_MAX_VOLTAGE;
+  float cap_voltage = analogReadMilliVolts(CAP_PIN) / 1000.0;  // Must be an ADC1 pin
 
   char current[FLOAT_BUFF_SIZE], voltage[FLOAT_BUFF_SIZE], state[FLOAT_BUFF_SIZE], v_cap[FLOAT_BUFF_SIZE];
   //convert INA219 values from floats to strings - ZERO PADDED SO THEY ARE ALWAYS THE SAME LENGTH!!!
